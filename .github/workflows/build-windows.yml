@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+env:
+  PYTHONIOENCODING: 'utf-8'
+  PYTHONUTF8: '1'
+
 jobs:
   build-windows:
     name: Build Windows Executable & Installer
@@ -23,7 +27,6 @@ jobs:
         with:
           python-version: '3.11'
           architecture: 'x64'
-          cache: 'pip'
 
       - name: Install Dependencies
         run: |
@@ -32,7 +35,7 @@ jobs:
 
       - name: Verify Application Syntax & Modules
         run: |
-          python -c "import app, main_exe; print('✅ Application modules verified successfully')"
+          python -c "import app, main_exe; print('Application modules verified successfully')"
 
       - name: Build Executable via PyInstaller
         run: |
@@ -41,12 +44,12 @@ jobs:
       - name: Verify Executable Creation
         run: |
           if (-Not (Test-Path "dist\mostager.exe")) {
-            Write-Error "❌ mostager.exe was not created in dist/"
+            Write-Error "mostager.exe was not created in dist/"
             exit 1
           }
           $exe = Get-Item "dist\mostager.exe"
           $sizeMB = [math]::Round($exe.Length / 1MB, 2)
-          Write-Host "✅ mostager.exe created successfully! Size: $sizeMB MB"
+          Write-Host "mostager.exe created successfully! Size: $sizeMB MB"
 
       - name: Install Inno Setup
         run: |
@@ -54,7 +57,12 @@ jobs:
 
       - name: Compile Setup.exe via Inno Setup
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\mostager.iss"
+          $iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue).Source
+          if (-not $iscc -or -not (Test-Path $iscc)) {
+            $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          }
+          Write-Host "Using Inno Setup compiler: $iscc"
+          & $iscc "installer\mostager.iss"
 
       - name: Prepare Release Packages
         run: |
@@ -68,7 +76,7 @@ jobs:
           Copy-Item "avatar.png" -Destination "dist_portable\Mostager\"
           Compress-Archive -Path "dist_portable\Mostager" -DestinationPath "dist_setup\Mostager-Portable-v2.5.0.zip"
           
-          Write-Host "✅ All deployment packages prepared in dist_setup/"
+          Write-Host "All deployment packages prepared in dist_setup/"
           Get-ChildItem "dist_setup" | Select-Object Name, Length
 
       - name: Upload Installer Artifacts
