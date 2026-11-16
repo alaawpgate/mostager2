@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم الرئيسية - مُستأجِر{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <!-- Main Content -->
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <!-- Modern Top Navigation Bar -->
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-house-chimney text-primary"></i>
+                            لوحة التحكم والإشراف
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">نظرة عامة وشاملة على العقود والمستأجرين وخدمات التنبيه الآلي</p>
+                </div>
+                
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <div class="d-none d-xl-flex align-items-center badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                        <span class="spinner-grow spinner-grow-sm me-2 text-success" style="width: 8px; height: 8px;" role="status"></span>
+                        Whats360 متصل
+                    </div>
+                    <a href="{{ url_for('add_tenant') }}" class="btn btn-primary d-none d-sm-inline-flex">
+                        <i class="fas fa-plus"></i>
+                        <span>إضافة مستأجر</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <!-- Page Content Body -->
+            <div class="content-wrapper">
+                <!-- 4 KPI Stat Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon stat-icon-teal">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-label">إجمالي المستأجرين</div>
+                                <div class="stat-card-value">{{ stats.total_tenants if stats else 0 }}</div>
+                                <span class="stat-card-badge bg-teal bg-opacity-10 text-teal">
+                                    <i class="fas fa-folder-open me-1"></i>عقود مسجلة
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon stat-icon-blue">
+                                <i class="fab fa-whatsapp"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-label">التنبيهات المرسلة</div>
+                                <div class="stat-card-value">{{ stats.notifications_count if stats else 0 }}</div>
+                                <span class="stat-card-badge bg-primary bg-opacity-10 text-primary">
+                                    <i class="fas fa-check-double me-1"></i>رسالة واتساب
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon stat-icon-amber">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-label">الرسائل المجدولة</div>
+                                <div class="stat-card-value">{{ stats.scheduled_count if stats else 0 }}</div>
+                                <span class="stat-card-badge bg-warning bg-opacity-10 text-warning">
+                                    <i class="fas fa-clock me-1"></i>تذكيرات آلية
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon stat-icon-emerald">
+                                <i class="fas fa-file-invoice"></i>
+                            </div>
+                            <div class="stat-card-content">
+                                <div class="stat-card-label">نماذج الرسائل</div>
+                                <div class="stat-card-value">{{ stats.templates_count if stats else 0 }}</div>
+                                <span class="stat-card-badge bg-success bg-opacity-10 text-success">
+                                    <i class="fas fa-layer-group me-1"></i>قوالب معتمدة
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fast Actions & WhatsApp Integration Overview -->
+                <div class="row g-4 mb-4">
+                    <!-- Quick Actions Grid -->
+                    <div class="col-lg-8">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-bolt text-warning"></i>
+                                    <span>الوصول السريع والعمليات اليومية</span>
+                                </div>
+                                <span class="badge bg-light text-secondary">إجراءات سريعة</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-sm-6 col-md-4">
+                                        <a href="{{ url_for('add_tenant') }}" class="card text-decoration-none border h-100 p-3 text-center bg-light bg-opacity-50 hover-shadow transition">
+                                            <div class="mb-2 text-primary" style="font-size: 1.75rem;">
+                                                <i class="fas fa-user-plus"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">تسجيل مستأجر</h6>
+                                            <small class="text-muted">إضافة بيانات العقد والمستأجر</small>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <a href="{{ url_for('view_tenants') }}" class="card text-decoration-none border h-100 p-3 text-center bg-light bg-opacity-50 hover-shadow transition">
+                                            <div class="mb-2 text-success" style="font-size: 1.75rem;">
+                                                <i class="fas fa-address-book"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">إدارة المستأجرين</h6>
+                                            <small class="text-muted">متابعة العقود والتحصيل</small>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <a href="{{ url_for('message_center') }}" class="card text-decoration-none border h-100 p-3 text-center bg-light bg-opacity-50 hover-shadow transition">
+                                            <div class="mb-2 text-info" style="font-size: 1.75rem;">
+                                                <i class="fab fa-whatsapp"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">مركز الرسائل</h6>
+                                            <small class="text-muted">إرسال إشعارات جماعية وفردية</small>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <a href="{{ url_for('notifications') }}" class="card text-decoration-none border h-100 p-3 text-center bg-light bg-opacity-50 hover-shadow transition">
+                                            <div class="mb-2 text-warning" style="font-size: 1.75rem;">
+                                                <i class="fas fa-bell"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">سجل التنبيهات</h6>
+                                            <small class="text-muted">استعراض تقارير التسليم</small>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <a href="{{ url_for('reports') }}" class="card text-decoration-none border h-100 p-3 text-center bg-light bg-opacity-50 hover-shadow transition">
+                                            <div class="mb-2 text-secondary" style="font-size: 1.75rem;">
+                                                <i class="fas fa-chart-column"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">التقارير التحليلية</h6>
+                                            <small class="text-muted">إحصاءات العقود والإيرادات</small>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <a href="{{ url_for('settings') }}" class="card text-decoration-none border h-100 p-3 text-center bg-light bg-opacity-50 hover-shadow transition">
+                                            <div class="mb-2 text-dark" style="font-size: 1.75rem;">
+                                                <i class="fas fa-gears"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">إعدادات النظام</h6>
+                                            <small class="text-muted">ضبط مواعيد الإرسال والـ API</small>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Integration Status Widget -->
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fab fa-whatsapp text-success"></i>
+                                    <span>خدمة واتساب الرسمية (Whats360)</span>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="p-3 mb-3 rounded-3 bg-light border">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted small">حالة الاتصال:</span>
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>نظام Whats360 نشط</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="text-muted small">موعد التذكير اليومي:</span>
+                                            <span class="fw-bold text-dark">4:59 مساءً يومياً</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted small">نوع الرسائل:</span>
+                                            <span class="text-dark small">تذكيرات إيجار + انتهاء عقود</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small mb-0">
+                                        <i class="fas fa-circle-info text-info me-1"></i>
+                                        يقوم النظام آلياً بفحص تواريخ استحقاق الإيجار وتواريخ نهاية العقود وإرسال رسائل التذكير للمستأجرين عبر الواتساب.
+                                    </p>
+                                </div>
+                                <div class="mt-3 pt-3 border-top">
+                                    <a href="{{ url_for('settings') }}" class="btn btn-outline-primary w-100">
+                                        <i class="fas fa-sliders me-1"></i>
+                                        تعديل نصوص ورسائل التذكير
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Tenants Preview Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-clock-rotate-left text-primary"></i>
+                            <span>أحدث المستأجرين المسجلين في النظام</span>
+                        </div>
+                        <a href="{{ url_for('view_tenants') }}" class="btn btn-sm btn-outline-primary">
+                            <span>عرض كل المستأجرين</span>
+                            <i class="fas fa-arrow-left ms-1"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="card-body p-0">
+                        {% if stats and stats.recent_tenants %}
+                        <div tabindex="0" role="region" aria-label="أحدث المستأجرين المسجلين" class="table-wrapper m-0 border-0 rounded-0 shadow-none">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>اسم المستأجر</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>تاريخ البدء</th>
+                                        <th>تاريخ الانتهاء</th>
+                                        <th class="text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tenant in stats.recent_tenants %}
+                                    <tr>
+                                        <td class="text-muted fw-bold">{{ tenant[0] }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="tenant-avatar">
+                                                    {{ tenant[1][:1] }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark">{{ tenant[1] }}</div>
+                                                    <small class="text-muted">مستأجر معتمد</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if tenant[2] %}
+                                            <a href="{{ tenant[2]|whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-success fw-bold" title="مراسلة عبر واتساب">
+                                                <i class="fab fa-whatsapp me-1"></i>
+                                                {{ tenant[2] }}
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted">غير مسجل</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border">{{ tenant[3] or '---' }}</span></td>
+                                        <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">{{ tenant[4] or '---' }}</span></td>
+                                        <td class="text-center">
+                                            <a href="{{ url_for('view_tenant', tenant_id=tenant[0]) }}" class="btn btn-sm btn-secondary me-1" title="عرض التفاصيل">
+                                                <i class="fas fa-eye text-primary"></i>
+                                            </a>
+                                            <a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" class="btn btn-sm btn-secondary" title="تعديل">
+                                                <i class="fas fa-edit text-warning"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users-slash text-muted fa-3x mb-3"></i>
+                            <h5 class="text-secondary">لا يوجد مستأجرون مسجلون حالياً</h5>
+                            <p class="text-muted mb-3">يمكنك البدء بإضافة أول مستأجر عبر الزر أدناه</p>
+                            <a href="{{ url_for('add_tenant') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>
+                                إضافة مستأجر جديد
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

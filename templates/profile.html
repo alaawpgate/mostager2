@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}الملف الشخصي - نظام مُستأجِر{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <!-- Main content -->
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <!-- Shared App Topbar -->
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-user-gear text-primary"></i>
+                            الملف الشخصي لمدير النظام
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">تعديل البيانات الأساسية، كلمة المرور وصورة الحساب الشخصي</p>
+                </div>
+                
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>العودة للرئيسية</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                {% if success %}
+                <div class="alert alert-success alert-dismissible fade show mb-4 d-flex align-items-center gap-2" role="alert">
+                    <i class="fas fa-circle-check fs-5"></i>
+                    <div>{{ success }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show mb-4 d-flex align-items-center gap-2" role="alert">
+                    <i class="fas fa-circle-exclamation fs-5"></i>
+                    <div>{{ error }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data" id="profileForm">
+                    <div class="row g-4">
+                        <!-- Profile Card & Avatar Preview -->
+                        <div class="col-lg-4">
+                            <div class="card h-100 text-center shadow-sm border">
+                                <div class="card-body p-4 d-flex flex-column align-items-center">
+                                    <div class="profile-avatar-wrapper mb-3 position-relative">
+                                        {% if admin.avatar and admin.avatar != 'avatar.png' %}
+                                            <img id="avatarPreview" src="{{ url_for('static', filename='uploads/' + admin.avatar) }}" alt="Admin Avatar" class="profile-main-avatar" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                                        {% else %}
+                                            <img id="avatarPreview" src="{{ url_for('static', filename='avatar.png') }}" alt="Admin Avatar" class="profile-main-avatar">
+                                        {% endif %}
+                                        <label for="avatarInput" class="avatar-upload-badge" title="تغيير الصورة">
+                                            <i class="fas fa-camera"></i>
+                                        </label>
+                                        <input type="file" id="avatarInput" name="avatar" accept="image/*" class="d-none" onchange="previewAvatar(this)">
+                                    </div>
+
+                                    <div id="avatarSelectedNotice" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 mb-3 py-2 px-3" style="display: none;">
+                                        <i class="fas fa-check-circle me-1"></i>تم اختيار صورة جديدة، اضغط "حفظ التغييرات"
+                                    </div>
+
+                                    <h4 class="fw-bold mb-1 text-dark">{{ admin.full_name }}</h4>
+                                    <span class="badge bg-teal-subtle text-teal border border-teal-subtle px-3 py-1 mb-3">
+                                        <i class="fas fa-shield-halved me-1"></i>مشرف النظام
+                                    </span>
+                                    
+                                    <div class="w-100 border-top pt-3 text-start small">
+                                        <div class="d-flex justify-content-between py-2 border-bottom">
+                                            <span class="text-muted">اسم المستخدم:</span>
+                                            <strong class="text-dark">{{ admin.username }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-2 border-bottom">
+                                            <span class="text-muted">البريد الإلكتروني:</span>
+                                            <span class="text-dark text-break">{{ admin.email }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-2">
+                                            <span class="text-muted">الهاتف:</span>
+                                            <span class="text-dark">{{ admin.phone or 'غير مسجل' }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-outline-primary btn-sm mt-3 w-100" onclick="document.getElementById('avatarInput').click();">
+                                        <i class="fas fa-image me-1"></i>اختيار صورة جديدة من جهازك
+                                    </button>
+
+                                    <button type="submit" class="btn btn-success btn-sm mt-2 w-100">
+                                        <i class="fas fa-floppy-disk me-1"></i>حفظ الصورة والبيانات
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Information & Password Change -->
+                        <div class="col-lg-8">
+                            <!-- Basic Info Card -->
+                            <div class="card shadow-sm mb-4 border">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                                        <i class="fas fa-id-card text-primary me-2"></i>
+                                        البيانات الأساسية للحساب
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="full_name" class="form-label fw-bold small text-dark">الاسم الكامل / اللقب</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-user text-muted"></i></span>
+                                                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ admin.full_name }}" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <label for="username" class="form-label fw-bold small text-dark">اسم المستخدم لتسجيل الدخول</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-at text-muted"></i></span>
+                                                <input type="text" class="form-control" id="username" name="username" value="{{ admin.username }}" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="email" class="form-label fw-bold small text-dark">البريد الإلكتروني الرسمي</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+                                                <input type="email" class="form-control" id="email" name="email" value="{{ admin.email }}" required>
+                                            </div>
+                                            <small class="text-muted">يُستخدم لاستعادة كلمة المرور عند نسيانها</small>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="phone" class="form-label fw-bold small text-dark">رقم الهاتف للتواصل</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-phone text-muted"></i></span>
+                                                <input type="text" class="form-control" id="phone" name="phone" value="{{ admin.phone or '' }}" placeholder="مثال: 01009931190">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Security & Password Change Card -->
+                            <div class="card shadow-sm mb-4 border">
+                                <div class="card-header bg-white py-3">
+                                    <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                                        <i class="fas fa-lock text-warning me-2"></i>
+                                        تغيير كلمة المرور (اختياري تماماً)
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-3">
+                                        <i class="fas fa-info-circle text-primary fs-6"></i>
+                                        <div>إذا كنت تريد فقط تغيير الصورة، الاسم أو البريد الإلكتروني، <strong>اترك حقول كلمة المرور فارغة بالكامل</strong>.</div>
+                                    </div>
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label for="current_password" class="form-label fw-bold small text-dark">كلمة المرور الحالية (فقط في حال الرغبة بتغيير كلمة المرور)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-key text-muted"></i></span>
+                                                <input type="password" class="form-control" id="current_password" name="current_password" placeholder="أدخل كلمة المرور الحالية للتأكيد" autocomplete="new-password">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePass('current_password', this)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="new_password" class="form-label fw-bold small text-dark">كلمة المرور الجديدة</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-lock text-muted"></i></span>
+                                                <input type="password" class="form-control" id="new_password" name="new_password" placeholder="4 خانات على الأقل" autocomplete="new-password">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePass('new_password', this)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="confirm_password" class="form-label fw-bold small text-dark">تأكيد كلمة المرور الجديدة</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light"><i class="fas fa-circle-check text-muted"></i></span>
+                                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="أعد إدخال كلمة المرور" autocomplete="new-password">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePass('confirm_password', this)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary px-3">إلغاء</a>
+                                <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">
+                                    <i class="fas fa-floppy-disk me-2"></i>حفظ كافة التغييرات
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').src = e.target.result;
+            const notice = document.getElementById('avatarSelectedNotice');
+            if (notice) notice.style.display = 'inline-block';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+function togglePass(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

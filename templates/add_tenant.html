@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة مستأجر{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <!-- Main content -->
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-user-plus text-primary"></i>
+                            إضافة مستأجر جديد
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">تسجيل بيانات المستأجر وإعداد صفحات العقد والشيكات</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <a href="{{ url_for('view_tenants') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>العودة للقائمة</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+
+            <form method="POST" id="tenantForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="tenant_name" class="form-label">اسم المستأجر</label>
+                    <input type="text" class="form-control" id="tenant_name" name="tenant_name" 
+                           value="{% if tenant_data %}{{ tenant_data[1] }}{% endif %}" required>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_image" class="form-label">صورة الهوية</label>
+                        <input type="file" class="form-control" id="id_image" name="id_image" accept="image/*">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="contract_image" class="form-label">صورة العقد</label>
+                        <input type="file" class="form-control" id="contract_image" name="contract_image" accept="image/*">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>الصفحة الأولى</h4>
+                        <div id="page_one_container" style="border: 1px solid #ddd; padding: 20px; background: white;">
+                            {% if tenant_data %}
+                                {{ tenant_data[2]|safe }}
+                            {% else %}
+                                {% include 'contract_page_one_content.html' %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>الصفحة الثانية</h4>
+                        <div id="page_two_container" style="border: 1px solid #ddd; padding: 20px; background: white;">
+                            {% if tenant_data %}
+                                {{ tenant_data[3]|safe }}
+                            {% else %}
+                                {% include 'contract_page_two_content.html' %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="page_one_content" id="page_one_content">
+                <input type="hidden" name="page_two_content" id="page_two_content">
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h4>تفاصيل العقد الإضافية</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="contract_type" class="form-label">نوع العقد</label>
+                                            <select class="form-control" id="contract_type" name="contract_type">
+                                                <option value="">اختر نوع العقد</option>
+                                                <option value="جديد" {% if tenant_data and tenant_data[11] == 'جديد' %}selected{% endif %}>جديد</option>
+                                                <option value="تجديد" {% if tenant_data and tenant_data[11] == 'تجديد' %}selected{% endif %}>تجديد</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="payment_count" class="form-label">عدد الدفعات / الشيكات</label>
+                                            <input type="number" class="form-control" id="payment_count" name="payment_count" value="{% if tenant_data %}{{ tenant_data[12] or '' }}{% endif %}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="commercial_license_number" class="form-label">رقم الرخصة التجارية</label>
+                                            <input type="text" class="form-control" id="commercial_license_number" name="commercial_license_number" value="{% if tenant_data %}{{ tenant_data[17] or '' }}{% endif %}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="commercial_license_image" class="form-label">صورة الرخصة التجارية</label>
+                                            <input type="file" class="form-control" id="commercial_license_image" name="commercial_license_image" accept="image/*">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">صور الشيكات</label>
+                                    <div id="check_images_container">
+                                        <div class="check-image-input mb-2 position-relative">
+                                            <input type="file" class="form-control" name="check_image_1" accept="image/*" onchange="previewCheckImage(this, 1)">
+                                            <div id="preview_1" class="mt-2" style="display: none;">
+                                                <img id="img_1" style="width: 100px; height: 100px;" class="img-thumbnail">
+                                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" style="padding: 2px 6px; font-size: 10px;" onclick="removeCheckImage(1)">×</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="addCheckImageInput()">إضافة صورة شيك أخرى</button>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="has_commitment" class="form-label">التعهد</label>
+                                            <textarea class="form-control" id="has_commitment" name="has_commitment" rows="2">{% if tenant_data %}{{ tenant_data[14] or '' }}{% endif %}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="maintenance_responsibility" class="form-label">الصيانة</label>
+                                            <textarea class="form-control" id="maintenance_responsibility" name="maintenance_responsibility" rows="2">{% if tenant_data %}{{ tenant_data[15] or '' }}{% endif %}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">ملاحظات</label>
+                                    <textarea class="form-control" id="notes" name="notes" rows="3">{% if tenant_data %}{{ tenant_data[16] or '' }}{% endif %}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">حفظ المستأجر</button>
+                    <a href="{{ url_for('view_tenants') }}" class="btn btn-secondary">إلغاء</a>
+                </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</div>
+
+<script>
+document.getElementById('tenantForm').addEventListener('submit', function(e) {
+    const pageOneContent = document.getElementById('page_one_container').innerHTML;
+    const pageTwoContent = document.getElementById('page_two_container').innerHTML;
+    
+    document.getElementById('page_one_content').value = pageOneContent;
+    document.getElementById('page_two_content').value = pageTwoContent;
+    
+    const tenantNameField = document.querySelector('#page_one_container #tenant_name_field');
+    if (tenantNameField && !document.getElementById('tenant_name').value.trim()) {
+        document.getElementById('tenant_name').value = tenantNameField.textContent.trim();
+    }
+});
+
+let checkImageCounter = 1;
+function addCheckImageInput() {
+    checkImageCounter++;
+    const container = document.getElementById('check_images_container');
+    const newInput = document.createElement('div');
+    newInput.className = 'check-image-input mb-2 position-relative';
+    newInput.innerHTML = `
+        <input type="file" class="form-control" name="check_image_${checkImageCounter}" accept="image/*" onchange="previewCheckImage(this, ${checkImageCounter})">
+        <div id="preview_${checkImageCounter}" class="mt-2" style="display: none;">
+            <img id="img_${checkImageCounter}" style="width: 100px; height: 100px;" class="img-thumbnail">
+            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" style="padding: 2px 6px; font-size: 10px;" onclick="removeCheckImage(${checkImageCounter})">×</button>
+        </div>
+    `;
+    container.appendChild(newInput);
+}
+
+function previewCheckImage(input, index) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('img_' + index).src = e.target.result;
+            document.getElementById('preview_' + index).style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeCheckImage(index) {
+    document.querySelector(`input[name="check_image_${index}"]`).value = '';
+    document.getElementById('preview_' + index).style.display = 'none';
+}
+
+function removeCheckImageInput(button) {
+    button.closest('.check-image-input').remove();
+}
+</script>
+{% endblock %}

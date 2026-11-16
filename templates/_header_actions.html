@@ -1,0 +1,205 @@
+<!-- Header Actions: Notification Bell + Admin Profile Dropdown -->
+<div class="d-flex align-items-center gap-3">
+    <!-- Interactive Notifications Bell Dropdown -->
+    <div class="dropdown" id="headerNotificationsDropdown">
+        <button class="btn btn-icon-round position-relative" type="button" id="notifBellBtn" data-bs-toggle="dropdown" aria-expanded="false" title="التنبيهات والإشعارات">
+            <i class="fas fa-bell fs-5 text-secondary"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" id="notifBadge" style="display: none; font-size: 0.68rem; padding: 0.3em 0.55em;">
+                <span id="notifCount">0</span>
+            </span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end notif-dropdown-menu shadow-lg p-0 border-0" aria-labelledby="notifBellBtn" style="width: 360px; max-width: 90vw;">
+            <div class="notif-header d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="fas fa-bell text-primary"></i>
+                    <span>التنبيهات</span>
+                    <span class="badge bg-primary rounded-pill small" id="notifHeaderCount">0</span>
+                </div>
+                <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 text-muted" onclick="markAllNotificationsAsRead(event)">
+                    <small><i class="fas fa-check-double me-1"></i>تحديد الكل كمقروء</small>
+                </button>
+            </div>
+            
+            <div class="notif-body" id="notifListContainer" style="max-height: 340px; overflow-y: auto;">
+                <!-- Notification Item 1: Expiring Contract -->
+                <a href="{{ url_for('view_tenants') }}" class="notif-item text-decoration-none d-flex gap-3 p-3 border-bottom" data-notif-id="notif_expiring_1" onclick="handleNotificationClick(event, this)">
+                    <div class="notif-icon-circle bg-warning bg-opacity-10 text-warning">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="notif-content flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-dark small">عقد قارب على الانتهاء</strong>
+                            <span class="unread-dot"></span>
+                        </div>
+                        <p class="text-secondary small mb-1">يوجد مستأجرين تنتهي عقودهم قريباً، يرجى مراجعة التجديد.</p>
+                        <small class="text-muted"><i class="fas fa-clock me-1"></i>اليوم</small>
+                    </div>
+                </a>
+
+                <!-- Notification Item 2: Rent Reminder -->
+                <a href="{{ url_for('view_tenants') }}" class="notif-item text-decoration-none d-flex gap-3 p-3 border-bottom" data-notif-id="notif_rent_2" onclick="handleNotificationClick(event, this)">
+                    <div class="notif-icon-circle bg-primary bg-opacity-10 text-primary">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="notif-content flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-dark small">تذكير استحقاق الإيجار</strong>
+                            <span class="unread-dot"></span>
+                        </div>
+                        <p class="text-secondary small mb-1">حان موعد سداد الأقساط الشهرية، اضغط لإرسال التذكيرات عبر الواتساب.</p>
+                        <small class="text-muted"><i class="fas fa-clock me-1"></i>اليوم</small>
+                    </div>
+                </a>
+
+                <!-- Notification Item 3: WhatsApp Status -->
+                <a href="{{ url_for('notifications') }}" class="notif-item text-decoration-none d-flex gap-3 p-3 border-bottom" data-notif-id="notif_whats360_3" onclick="handleNotificationClick(event, this)">
+                    <div class="notif-icon-circle bg-success bg-opacity-10 text-success">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="notif-content flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-dark small">Whats360 متصل بنجاح</strong>
+                            <span class="unread-dot"></span>
+                        </div>
+                        <p class="text-secondary small mb-1">خدمة الإرسال التلقائي جاهزة ومفعلة لموعد الإرسال اليومي.</p>
+                        <small class="text-muted"><i class="fas fa-check me-1"></i>نشط الآن</small>
+                    </div>
+                </a>
+
+                <!-- Notification Item 4: Reports -->
+                <a href="{{ url_for('reports') }}" class="notif-item text-decoration-none d-flex gap-3 p-3" data-notif-id="notif_reports_4" onclick="handleNotificationClick(event, this)">
+                    <div class="notif-icon-circle bg-info bg-opacity-10 text-info">
+                        <i class="fas fa-chart-column"></i>
+                    </div>
+                    <div class="notif-content flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-dark small">التقارير التحليلية</strong>
+                            <span class="unread-dot"></span>
+                        </div>
+                        <p class="text-secondary small mb-1">استعراض إحصائيات العقود النشطة ومعدل التحصيل.</p>
+                        <small class="text-muted"><i class="fas fa-calendar-day me-1"></i>هذا الأسبوع</small>
+                    </div>
+                </a>
+            </div>
+
+            <div class="notif-footer p-2 text-center border-top bg-light">
+                <a href="{{ url_for('notifications') }}" class="text-decoration-none small text-primary fw-bold">
+                    <i class="fas fa-list-check me-1"></i>عرض جميع سجلات التنبيهات
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Profile Avatar in Header -->
+    <div class="dropdown">
+        <button class="btn p-0 d-flex align-items-center gap-2 border-0 bg-transparent" type="button" id="adminHeaderMenu" data-bs-toggle="dropdown" aria-expanded="false" title="حساب مدير النظام">
+            <div class="header-user-avatar">
+                {% if current_admin and current_admin.avatar and current_admin.avatar != 'avatar.png' %}
+                    <img src="{{ url_for('static', filename='uploads/' + current_admin.avatar) }}" alt="Avatar" class="avatar-img" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                {% else %}
+                    <img src="{{ url_for('static', filename='avatar.png') }}" alt="Avatar" class="avatar-img">
+                {% endif %}
+            </div>
+            <div class="d-none d-md-block text-start" style="line-height: 1.2;">
+                <div class="fw-bold text-dark small">{{ current_admin.full_name if current_admin else 'مدير النظام' }}</div>
+                <small class="text-muted" style="font-size: 0.72rem;">مشرف العقارات</small>
+            </div>
+            <i class="fas fa-chevron-down text-muted small ms-1 d-none d-sm-inline"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2" aria-labelledby="adminHeaderMenu" style="min-width: 220px; border-radius: 12px;">
+            <li class="px-3 py-2 border-bottom mb-1 bg-light bg-opacity-50">
+                <div class="fw-bold text-dark">{{ current_admin.full_name if current_admin else 'مدير النظام' }}</div>
+                <small class="text-muted text-break">{{ current_admin.email if current_admin else 'admin@mostager.com' }}</small>
+            </li>
+            <li>
+                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ url_for('profile') }}">
+                    <i class="fas fa-user-gear text-primary"></i>
+                    <span>الملف الشخصي</span>
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="{{ url_for('settings') }}">
+                    <i class="fas fa-sliders text-warning"></i>
+                    <span>إعدادات النظام</span>
+                </a>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+                <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" href="{{ url_for('logout') }}">
+                    <i class="fas fa-arrow-right-from-bracket"></i>
+                    <span>تسجيل الخروج</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Notification Management with LocalStorage persistence
+const NOTIF_STORAGE_KEY = 'mostager_read_notifications';
+
+function getReadNotifications() {
+    try {
+        const stored = localStorage.getItem(NOTIF_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch(e) {
+        return [];
+    }
+}
+
+function updateNotificationUI() {
+    const readIds = getReadNotifications();
+    const items = document.querySelectorAll('.notif-item');
+    let unreadCount = 0;
+    
+    items.forEach(item => {
+        const id = item.getAttribute('data-notif-id');
+        if (readIds.includes(id)) {
+            item.classList.remove('unread');
+            const dot = item.querySelector('.unread-dot');
+            if (dot) dot.style.display = 'none';
+        } else {
+            item.classList.add('unread');
+            unreadCount++;
+            const dot = item.querySelector('.unread-dot');
+            if (dot) dot.style.display = 'inline-block';
+        }
+    });
+    
+    const badge = document.getElementById('notifBadge');
+    const countEl = document.getElementById('notifCount');
+    const headerCountEl = document.getElementById('notifHeaderCount');
+    
+    if (countEl) countEl.textContent = unreadCount;
+    if (headerCountEl) headerCountEl.textContent = unreadCount;
+    
+    if (badge) {
+        badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+    }
+}
+
+function handleNotificationClick(event, element) {
+    const id = element.getAttribute('data-notif-id');
+    const readIds = getReadNotifications();
+    if (!readIds.includes(id)) {
+        readIds.push(id);
+        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(readIds));
+    }
+    updateNotificationUI();
+}
+
+function markAllNotificationsAsRead(event) {
+    if (event) event.stopPropagation();
+    const items = document.querySelectorAll('.notif-item');
+    const readIds = [];
+    items.forEach(item => {
+        const id = item.getAttribute('data-notif-id');
+        if (id) readIds.push(id);
+    });
+    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(readIds));
+    updateNotificationUI();
+}
+
+// Initialise notifications state on load
+document.addEventListener('DOMContentLoaded', updateNotificationUI);
+</script>

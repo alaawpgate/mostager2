@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}سجل المستأجرين - مُستأجِر{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <!-- Main content -->
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <!-- Modern Top Navigation Bar -->
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-users text-primary"></i>
+                            سجل المستأجرين والعقود
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">استعراض بيانات المستأجرين، العقود، وإرسال التنبيهات المباشرة</p>
+                </div>
+                
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <a href="{{ url_for('add_tenant') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        <span>إضافة مستأجر جديد</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+                {% if tenants %}
+                <!-- Search & Filter Card -->
+                <div class="card mb-3">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-6 col-lg-4">
+                                <div class="position-relative">
+                                    <input type="text" id="tenantSearchInput" class="form-control ps-4" placeholder="بحث باسم المستأجر أو رقم الهاتف..." onkeyup="filterTenants()">
+                                    <i class="fas fa-search position-absolute text-muted" style="right: 12px; top: 50%; transform: translateY(-50%);"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-8 text-md-start">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2">
+                                    <i class="fas fa-user-check me-1"></i>
+                                    إجمالي المستأجرين: <strong id="tenantsCount">{{ tenants|length }}</strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modern Responsive Table Card -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div tabindex="0" role="region" aria-label="جدول بيانات المستأجرين" class="table-wrapper m-0 border-0 rounded-0 shadow-none">
+                            <table class="table align-middle" id="tenantsTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>المستأجر</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>تاريخ البدء</th>
+                                        <th>تاريخ الانتهاء</th>
+                                        <th>تاريخ التسجيل</th>
+                                        <th class="text-center">الهوية</th>
+                                        <th class="text-center">العقد</th>
+                                        <th class="text-center" style="min-width: 240px;">الإجراءات السريعة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tenant in tenants %}
+                                    <tr class="tenant-row">
+                                        <td class="text-muted fw-bold">{{ tenant[0] }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="tenant-avatar">
+                                                    {{ tenant[1][:1] }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark tenant-name">{{ tenant[1] }}</div>
+                                                    <small class="text-muted">عقد إيجار</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if tenant[2] %}
+                                            <a href="{{ tenant[2]|whatsapp_url }}" target="_blank" class="text-decoration-none text-success fw-bold tenant-phone" title="فتح محادثة واتساب فورية">
+                                                <i class="fab fa-whatsapp me-1"></i>
+                                                {{ tenant[2] }}
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted small">غير مسجل</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">{{ tenant[3] if tenant[3] else '-' }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">{{ tenant[4] if tenant[4] else '-' }}</span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ tenant[5][:10] if tenant[5] else '-' }}</small>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if tenant[9] %}
+                                                <a href="{{ url_for('static', filename='uploads/' + tenant[9]) }}" target="_blank" title="عرض صورة الهوية">
+                                                    <img src="{{ url_for('static', filename='uploads/' + tenant[9]) }}" alt="الهوية" style="width: 42px; height: 42px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if tenant[10] %}
+                                                <a href="{{ url_for('static', filename='uploads/' + tenant[10]) }}" target="_blank" title="عرض صورة العقد">
+                                                    <img src="{{ url_for('static', filename='uploads/' + tenant[10]) }}" alt="العقد" style="width: 42px; height: 42px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                {% if tenant[2] %}
+                                                <!-- Direct WhatsApp Chat -->
+                                                <a href="{{ tenant[2]|whatsapp_url }}" target="_blank" class="btn btn-sm btn-outline-success" title="محادثة واتساب مباشرة">
+                                                    <i class="fab fa-whatsapp"></i>
+                                                </a>
+                                                {% endif %}
+                                                <!-- WhatsApp Reminder Triggers -->
+                                                <button class="btn btn-sm btn-outline-warning" onclick="sendRentalReminder({{ tenant[0] }})" title="إرسال تذكير سداد الإيجار عبر الواتساب">
+                                                    <i class="fas fa-bell"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="sendContractExpiry({{ tenant[0] }})" title="إرسال تذكير انتهاء العقد">
+                                                    <i class="fas fa-triangle-exclamation"></i>
+                                                </button>
+
+                                                <!-- Tenant Management Links -->
+                                                <a href="{{ url_for('view_tenant', tenant_id=tenant[0]) }}" class="btn btn-sm btn-secondary" title="عرض تفاصيل العقد">
+                                                    <i class="fas fa-eye text-primary"></i>
+                                                </a>
+                                                <a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" class="btn btn-sm btn-secondary" title="تعديل البيانات">
+                                                    <i class="fas fa-pen-to-square text-warning"></i>
+                                                </a>
+                                                <a href="{{ url_for('add_tenant', copy_id=tenant[0]) }}" class="btn btn-sm btn-secondary" title="نسخ البيانات لعقد جديد">
+                                                    <i class="fas fa-copy text-success"></i>
+                                                </a>
+                                                <a href="{{ url_for('delete_tenant', tenant_id=tenant[0]) }}" class="btn btn-sm btn-secondary" title="حذف المستأجر" onclick="return confirm('هل أنت متأكد من رغبتك في حذف هذا المستأجر وجميع سجلاته؟')">
+                                                    <i class="fas fa-trash-can text-danger"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card text-center py-5 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-users-slash text-muted fa-4x"></i>
+                        </div>
+                        <h4 class="text-dark fw-bold mb-2">لا يوجد مستأجرون مسجلون بعد</h4>
+                        <p class="text-muted mb-4">ابدأ بإضافة أول عقد ومستأجر في النظام لتفعيل الإشعارات والتذكيرات الآلية.</p>
+                        <a href="{{ url_for('add_tenant') }}" class="btn btn-primary px-4 py-2">
+                            <i class="fas fa-plus me-2"></i>إضافة أول مستأجر
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function filterTenants() {
+    const input = document.getElementById('tenantSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.tenant-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const name = row.querySelector('.tenant-name').textContent.toLowerCase();
+        const phone = row.querySelector('.tenant-phone') ? row.querySelector('.tenant-phone').textContent.toLowerCase() : '';
+        if (name.includes(input) || phone.includes(input)) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    const countBadge = document.getElementById('tenantsCount');
+    if (countBadge) {
+        countBadge.textContent = visibleCount;
+    }
+}
+
+function sendRentalReminder(tenantId) {
+    if (confirm('هل تريد إرسال تذكير الإيجار لهذا المستأجر عبر الواتساب؟')) {
+        fetch('/send-rental-reminder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({tenant_id: tenantId})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ تم إرسال التذكير بنجاح عبر Whats360');
+            } else {
+                alert('❌ فشل في إرسال التذكير: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('حدث خطأ في الاتصال بالخادم');
+        });
+    }
+}
+
+function sendContractExpiry(tenantId) {
+    if (confirm('هل تريد إرسال تذكير انتهاء العقد لهذا المستأجر عبر الواتساب؟')) {
+        fetch('/send-contract-expiry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({tenant_id: tenantId})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ تم إرسال التذكير بنجاح عبر Whats360');
+            } else {
+                alert('❌ فشل في إرسال التذكير: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('حدث خطأ في الاتصال بالخادم');
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,581 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل المستأجر: {{ tenant[1] }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <!-- Main content -->
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <!-- App Topbar -->
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-id-card text-primary"></i>
+                            ملف المستأجر: {{ tenant[1] }}
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">استعراض منظم لبيانات العقد، المرفقات الرسمية، الشيكات والصفحات الإلكترونية</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button onclick="window.print()" class="btn btn-outline-secondary d-none d-sm-inline-flex" title="طباعة ملف المستأجر">
+                        <i class="fas fa-print me-1"></i>
+                        <span class="d-none d-md-inline">طباعة</span>
+                    </button>
+                    <a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" class="btn btn-outline-warning d-none d-sm-inline-flex" title="تعديل بيانات العقد">
+                        <i class="fas fa-edit me-1"></i>
+                        <span class="d-none d-md-inline">تعديل</span>
+                    </a>
+                    <a href="{{ url_for('view_tenants') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        <span class="d-none d-md-inline">قائمة المستأجرين</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+                <!-- Tenant Hero Profile Card -->
+                <div class="tenant-hero-card">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="tenant-hero-avatar">
+                                {{ tenant[1][:1] }}
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <h3 class="mb-0 fw-bold text-dark">{{ tenant[1] }}</h3>
+                                    <span class="badge bg-teal-subtle text-teal border border-teal-subtle px-2 py-1">
+                                        <i class="fas fa-check-circle me-1"></i>مستأجر نشط
+                                    </span>
+                                    {% if tenant[11] %}
+                                    <span class="badge bg-light text-secondary border">
+                                        {{ tenant[11] }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex align-items-center gap-3 mt-2 flex-wrap">
+                                    {% if tenant[6] %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-muted small"><i class="fas fa-phone me-1"></i>الهاتف:</span>
+                                        <strong class="text-dark">{{ tenant[6] }}</strong>
+                                        <a href="{{ tenant[6]|whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-success py-0 px-2 rounded-pill" title="مراسلة عبر واتساب">
+                                            <i class="fab fa-whatsapp me-1"></i>واتساب
+                                        </a>
+                                        <a href="tel:{{ tenant[6] }}" class="btn btn-sm btn-outline-primary py-0 px-2 rounded-pill d-none d-sm-inline-block">
+                                            <i class="fas fa-phone-flip me-1"></i>اتصال
+                                        </a>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted small"><i class="fas fa-phone-slash me-1"></i>لا يوجد رقم هاتف مسجل</span>
+                                    {% endif %}
+                                    <span class="text-muted d-none d-md-inline">•</span>
+                                    <span class="text-muted small">
+                                        <i class="fas fa-hashtag me-1"></i>معرف المستأجر: <strong>#{{ tenant[0] }}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Action Buttons -->
+                        <div class="d-flex align-items-center gap-2 w-100 w-md-auto justify-content-md-end pt-2 pt-md-0 border-top border-md-0">
+                            {% if tenant[6] %}
+                            <a href="{{ tenant[6]|whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-success btn-sm flex-fill flex-md-grow-0">
+                                <i class="fab fa-whatsapp me-1"></i>مراسلة فورية
+                            </a>
+                            {% endif %}
+                            <a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" class="btn btn-warning btn-sm flex-fill flex-md-grow-0">
+                                <i class="fas fa-edit me-1"></i>تعديل
+                            </a>
+                            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm flex-fill flex-md-grow-0">
+                                <i class="fas fa-print me-1"></i>طباعة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Quick Stat Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="tenant-quick-stat">
+                            <div class="quick-stat-icon blue">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small">فترة سريان العقد</div>
+                                <div class="fw-bold text-dark text-truncate mt-1" style="direction: ltr; text-align: right;">
+                                    {{ tenant[7] or '---' }} <i class="fas fa-arrow-left text-muted small mx-1"></i> {{ tenant[8] or '---' }}
+                                </div>
+                                <small class="text-muted d-block mt-1">تاريخ الانتهاء: {{ tenant[8] or 'غير محدد' }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="tenant-quick-stat">
+                            <div class="quick-stat-icon teal">
+                                <i class="fas fa-file-signature"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small">نوع وتصنيف العقد</div>
+                                <div class="fw-bold text-dark fs-6 mt-1">{{ tenant[11] or 'عقد إيجار قياسي' }}</div>
+                                <small class="text-muted d-block mt-1">مسجل في النظام</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="tenant-quick-stat">
+                            <div class="quick-stat-icon amber">
+                                <i class="fas fa-money-check-dollar"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small">الدفعات والشيكات</div>
+                                <div class="fw-bold text-dark fs-6 mt-1">{{ tenant[12] or '0' }} دفعة / شيك</div>
+                                <small class="text-muted d-block mt-1">
+                                    {% if tenant[13] %}
+                                    <i class="fas fa-paperclip text-success me-1"></i>مرفق صور الشيكات
+                                    {% else %}
+                                    لا توجد صور مرفقة
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="tenant-quick-stat">
+                            <div class="quick-stat-icon green">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small">الرخصة التجارية</div>
+                                <div class="fw-bold text-dark fs-6 mt-1 text-truncate" title="{{ tenant[17] or 'غير مسجلة' }}">
+                                    {{ tenant[17] or 'غير مسجلة' }}
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    {% if tenant[18] %}
+                                    <i class="fas fa-check text-teal me-1"></i>مرفق صورة الرخصة
+                                    {% else %}
+                                    سجل بدون صورة
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modern Accessible Tab Navigation -->
+                <div class="modern-tabs-nav" focusgroup="tablist nomemory" role="tablist" aria-label="أقسام بيانات المستأجر">
+                    <button type="button" class="modern-tab-btn" id="tab-btn-terms" role="tab" aria-selected="true" aria-controls="panel-terms" focusgroupstart onclick="switchTab('terms')">
+                        <i class="fas fa-file-contract"></i>
+                        بيانات وشروط العقد
+                    </button>
+                    <button type="button" class="modern-tab-btn" id="tab-btn-docs" role="tab" aria-selected="false" aria-controls="panel-docs" onclick="switchTab('docs')">
+                        <i class="fas fa-folder-open"></i>
+                        المستندات والمرفقات الرسمية
+                    </button>
+                    <button type="button" class="modern-tab-btn" id="tab-btn-checks" role="tab" aria-selected="false" aria-controls="panel-checks" onclick="switchTab('checks')">
+                        <i class="fas fa-money-check"></i>
+                        سجل الشيكات والدفعات
+                        {% if tenant[13] %}
+                        <span class="badge bg-secondary rounded-pill">{{ tenant[13].split(',')|length }}</span>
+                        {% endif %}
+                    </button>
+                    <button type="button" class="modern-tab-btn" id="tab-btn-contract" role="tab" aria-selected="false" aria-controls="panel-contract" onclick="switchTab('contract')">
+                        <i class="fas fa-file-lines"></i>
+                        معاينة العقد الإلكتروني (A4)
+                    </button>
+                </div>
+
+                <!-- Tab 1: شروط وبيانات العقد -->
+                <div class="modern-tab-panel" id="panel-terms" role="tabpanel" aria-labelledby="tab-btn-terms">
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="card h-100 border shadow-sm">
+                                <div class="card-header bg-white py-3 border-bottom">
+                                    <h5 class="card-title mb-0 fw-bold text-dark">
+                                        <i class="fas fa-shield-halved text-primary me-2"></i>
+                                        مسؤولية الصيانة والالتزامات
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-4">
+                                        <label class="fw-bold text-dark small d-block mb-1">
+                                            <i class="fas fa-wrench text-warning me-1"></i>
+                                            مسؤولية الصيانة:
+                                        </label>
+                                        <div class="p-3 bg-light rounded border text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ tenant[15] or 'لم يتم تحديد شروط صيانة خاصة في هذا العقد.' }}</div>
+                                    </div>
+
+                                    <div>
+                                        <label class="fw-bold text-dark small d-block mb-1">
+                                            <i class="fas fa-handshake text-teal me-1"></i>
+                                            التعهد والالتزام:
+                                        </label>
+                                        <div class="p-3 bg-light rounded border text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ tenant[14] or 'لم يتم تسجيل تعهدات إضافية.' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="card h-100 border shadow-sm">
+                                <div class="card-header bg-white py-3 border-bottom">
+                                    <h5 class="card-title mb-0 fw-bold text-dark">
+                                        <i class="fas fa-info-circle text-teal me-2"></i>
+                                        البيانات التجارية والملاحظات
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-4">
+                                        <label class="fw-bold text-dark small d-block mb-1">
+                                            <i class="fas fa-barcode text-primary me-1"></i>
+                                            رقم الرخصة / السجل التجاري:
+                                        </label>
+                                        <div class="p-3 bg-light rounded border fw-bold text-dark">
+                                            {{ tenant[17] or 'لا توجد رخصة تجارية مسجلة' }}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="fw-bold text-dark small d-block mb-1">
+                                            <i class="fas fa-note-sticky text-amber me-1"></i>
+                                            ملاحظات إضافية:
+                                        </label>
+                                        <div class="p-3 bg-light rounded border text-secondary" style="white-space: pre-wrap; line-height: 1.7;">{{ tenant[16] or 'لا توجد ملاحظات مدونة للمستأجر.' }}</div>
+                                    </div>
+
+                                    <div class="pt-3 border-top d-flex justify-content-between align-items-center text-muted small">
+                                        <span><i class="fas fa-clock me-1"></i>تاريخ الإنشاء: {{ tenant[4] }}</span>
+                                        <span><i class="fas fa-rotate me-1"></i>آخر تحديث: {{ tenant[5] }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: المستندات والمرفقات الرسمية -->
+                <div class="modern-tab-panel" id="panel-docs" role="tabpanel" aria-labelledby="tab-btn-docs" hidden>
+                    <div class="row g-4">
+                        <!-- صورة الهوية -->
+                        <div class="col-md-6 col-lg-4">
+                            <div class="doc-card">
+                                <div class="doc-card-preview" {% if tenant[9] %}onclick="previewImage('{{ url_for('static', filename='uploads/' + tenant[9]) }}', 'صورة الهوية الوطنية / الإقامة - {{ tenant[1] }}')"{% endif %}>
+                                    {% if tenant[9] %}
+                                    <img src="{{ url_for('static', filename='uploads/' + tenant[9]) }}" alt="صورة الهوية" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                                    <div class="zoom-overlay">
+                                        <i class="fas fa-magnifying-glass-plus fa-lg"></i>
+                                        <span>اضغط للمعاينة المكبرة</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center p-4 text-muted">
+                                        <i class="fas fa-id-badge fa-3x mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0 small">لا توجد صورة هوية مسجلة</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="doc-card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">الهوية الوطنية / الإقامة</h6>
+                                        {% if tenant[9] %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">مرفقة</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-muted border">غير مرفقة</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-muted small mb-3">مستند إثبات الهوية الشخصية للمستأجر</p>
+                                    <div class="d-flex gap-2">
+                                        {% if tenant[9] %}
+                                        <button type="button" class="btn btn-outline-primary btn-sm flex-fill" onclick="previewImage('{{ url_for('static', filename='uploads/' + tenant[9]) }}', 'صورة الهوية - {{ tenant[1] }}')">
+                                            <i class="fas fa-eye me-1"></i>معاينة
+                                        </button>
+                                        <a href="{{ url_for('download_image', tenant_id=tenant[0], image_type='id') }}" class="btn btn-primary btn-sm flex-fill">
+                                            <i class="fas fa-download me-1"></i>تحميل
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-secondary btn-sm flex-fill" disabled>غير متاح للتحميل</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- صورة العقد الورقي -->
+                        <div class="col-md-6 col-lg-4">
+                            <div class="doc-card">
+                                <div class="doc-card-preview" {% if tenant[10] %}onclick="previewImage('{{ url_for('static', filename='uploads/' + tenant[10]) }}', 'صورة العقد الموقّع - {{ tenant[1] }}')"{% endif %}>
+                                    {% if tenant[10] %}
+                                    <img src="{{ url_for('static', filename='uploads/' + tenant[10]) }}" alt="صورة العقد" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                                    <div class="zoom-overlay">
+                                        <i class="fas fa-magnifying-glass-plus fa-lg"></i>
+                                        <span>اضغط للمعاينة المكبرة</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center p-4 text-muted">
+                                        <i class="fas fa-file-contract fa-3x mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0 small">لا توجد صورة عقد ورقي مرفقة</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="doc-card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">العقد الورقي الموقّع</h6>
+                                        {% if tenant[10] %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">مرفقة</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-muted border">غير مرفقة</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-muted small mb-3">النسخة الأصلية الموقعة والمختومة للعقد</p>
+                                    <div class="d-flex gap-2">
+                                        {% if tenant[10] %}
+                                        <button type="button" class="btn btn-outline-primary btn-sm flex-fill" onclick="previewImage('{{ url_for('static', filename='uploads/' + tenant[10]) }}', 'صورة العقد - {{ tenant[1] }}')">
+                                            <i class="fas fa-eye me-1"></i>معاينة
+                                        </button>
+                                        <a href="{{ url_for('download_image', tenant_id=tenant[0], image_type='contract') }}" class="btn btn-primary btn-sm flex-fill">
+                                            <i class="fas fa-download me-1"></i>تحميل
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-secondary btn-sm flex-fill" disabled>غير متاح للتحميل</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- صورة الرخصة التجارية -->
+                        <div class="col-md-6 col-lg-4">
+                            <div class="doc-card">
+                                <div class="doc-card-preview" {% if tenant[18] %}onclick="previewImage('{{ url_for('static', filename='uploads/' + tenant[18]) }}', 'صورة الرخصة التجارية - {{ tenant[1] }}')"{% endif %}>
+                                    {% if tenant[18] %}
+                                    <img src="{{ url_for('static', filename='uploads/' + tenant[18]) }}" alt="صورة الرخصة التجارية" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                                    <div class="zoom-overlay">
+                                        <i class="fas fa-magnifying-glass-plus fa-lg"></i>
+                                        <span>اضغط للمعاينة المكبرة</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center p-4 text-muted">
+                                        <i class="fas fa-certificate fa-3x mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0 small">لا توجد صورة رخصة تجارية</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="doc-card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-dark mb-0">الرخصة التجارية</h6>
+                                        {% if tenant[18] %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">مرفقة</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-muted border">غير مرفقة</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-muted small mb-3">السجل والترخيص التجاري للمنشأة</p>
+                                    <div class="d-flex gap-2">
+                                        {% if tenant[18] %}
+                                        <button type="button" class="btn btn-outline-primary btn-sm flex-fill" onclick="previewImage('{{ url_for('static', filename='uploads/' + tenant[18]) }}', 'صورة الرخصة - {{ tenant[1] }}')">
+                                            <i class="fas fa-eye me-1"></i>معاينة
+                                        </button>
+                                        <a href="{{ url_for('download_image', tenant_id=tenant[0], image_type='license') }}" class="btn btn-primary btn-sm flex-fill">
+                                            <i class="fas fa-download me-1"></i>تحميل
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-secondary btn-sm flex-fill" disabled>غير متاح للتحميل</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: سجل الشيكات والدفعات -->
+                <div class="modern-tab-panel" id="panel-checks" role="tabpanel" aria-labelledby="tab-btn-checks" hidden>
+                    <div class="card border shadow-sm">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 fw-bold text-dark">
+                                <i class="fas fa-money-check text-primary me-2"></i>
+                                الشيكات المسجلة لمستأجر ({{ tenant[12] or '0' }} دفعة)
+                            </h5>
+                            {% if tenant[13] %}
+                            <span class="badge bg-primary rounded-pill px-3 py-2">
+                                <i class="fas fa-images me-1"></i>{{ tenant[13].split(',')|length }} صورة شيك
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if tenant[13] %}
+                            <div class="row g-4">
+                                {% for check_img in tenant[13].split(',') %}
+                                {% if check_img.strip() %}
+                                <div class="col-sm-6 col-md-4 col-lg-3">
+                                    <div class="doc-card">
+                                        <div class="doc-card-preview" style="height: 160px;" onclick="previewImage('{{ url_for('static', filename='uploads/' + check_img.strip()) }}', 'شيك دفعة #{{ loop.index }} - {{ tenant[1] }}')">
+                                            <img src="{{ url_for('static', filename='uploads/' + check_img.strip()) }}" alt="صورة الشيك" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                                            <div class="zoom-overlay">
+                                                <i class="fas fa-search-plus"></i>
+                                                <span class="small">تكبير</span>
+                                            </div>
+                                        </div>
+                                        <div class="doc-card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="fw-bold text-dark small">شيك دفعة #{{ loop.index }}</span>
+                                                <span class="badge bg-light text-secondary border">مرفق</span>
+                                            </div>
+                                            <div class="d-flex gap-1">
+                                                <button type="button" class="btn btn-outline-primary btn-sm flex-fill" onclick="previewImage('{{ url_for('static', filename='uploads/' + check_img.strip()) }}', 'شيك دفعة #{{ loop.index }} - {{ tenant[1] }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <a href="{{ url_for('static', filename='uploads/' + check_img.strip()) }}" download="check_{{ tenant[0] }}_{{ loop.index }}.jpg" class="btn btn-primary btn-sm flex-fill">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <div class="mb-3 text-secondary opacity-50">
+                                    <i class="fas fa-receipt fa-4x"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark">لا توجد صور شيكات مسجلة لهذا المستأجر</h6>
+                                <p class="text-muted small">يمكنك رفع صور الشيكات وتحديث الدفعات عند تعديل بيانات العقد</p>
+                                <a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus me-1"></i>إضافة شيكات عبر تعديل المستأجر
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: صفحات العقد الإلكتروني (A4) -->
+                <div class="modern-tab-panel" id="panel-contract" role="tabpanel" aria-labelledby="tab-btn-contract" hidden>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary px-3 py-2"><i class="fas fa-print me-1"></i>جاهز للطباعة A4</span>
+                            <span class="text-muted small">الصفحات المستخرجة إلكترونياً من ملف العقد</span>
+                        </div>
+                        <button onclick="window.print()" class="btn btn-success btn-sm">
+                            <i class="fas fa-print me-1"></i>طباعة العقد الإلكتروني
+                        </button>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-6">
+                            <div class="card border shadow-sm">
+                                <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                                    <strong class="text-dark small"><i class="fas fa-file me-1 text-primary"></i>الصفحة الأولى من العقد</strong>
+                                    <span class="badge bg-light text-muted border">صفحة 1</span>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="contract-paper-preview">
+                                        {{ tenant[2]|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="card border shadow-sm">
+                                <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                                    <strong class="text-dark small"><i class="fas fa-file me-1 text-primary"></i>الصفحة الثانية من العقد</strong>
+                                    <span class="badge bg-light text-muted border">صفحة 2</span>
+                                </div>
+                                <div class="card-body p-3">
+                                    <div class="contract-paper-preview">
+                                        {{ tenant[3]|safe }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer timestamps -->
+                <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center text-muted small">
+                    <div>
+                        <i class="fas fa-database me-1 text-teal"></i>
+                        سجل النظام ID: <strong>{{ tenant[0] }}</strong> • تم الإنشاء في: {{ tenant[4] }}
+                    </div>
+                    <div>
+                        <i class="fas fa-clock-rotate-left me-1"></i>
+                        آخر تحديث: {{ tenant[5] }}
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal Image Lightbox / Zoom Preview -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-xl); overflow: hidden;">
+            <div class="modal-header bg-dark text-white py-3 border-0">
+                <h5 class="modal-title fs-6 fw-bold mb-0" id="imagePreviewModalLabel">معاينة المستند</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+            </div>
+            <div class="modal-body p-0 text-center bg-black position-relative" style="min-height: 350px;">
+                <img id="modalPreviewImage" src="" alt="معاينة" class="img-fluid" style="max-height: 75vh; object-fit: contain;">
+            </div>
+            <div class="modal-footer bg-light py-2 px-3 border-0 d-flex justify-content-between">
+                <a id="modalDownloadBtn" href="#" download class="btn btn-primary btn-sm">
+                    <i class="fas fa-download me-1"></i>تحميل الصورة
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Accessible Tab Switcher conforming to modern-web-guidance
+function switchTab(tabId) {
+    const tabs = ['terms', 'docs', 'checks', 'contract'];
+    
+    tabs.forEach(id => {
+        const btn = document.getElementById('tab-btn-' + id);
+        const panel = document.getElementById('panel-' + id);
+        if (!btn || !panel) return;
+        
+        const isSelected = (id === tabId);
+        btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+        btn.toggleAttribute('focusgroupstart', isSelected);
+        
+        if (isSelected) {
+            panel.removeAttribute('hidden');
+        } else {
+            panel.setAttribute('hidden', '');
+        }
+    });
+}
+
+// Lightbox Preview function
+function previewImage(imageSrc, title) {
+    const modalImg = document.getElementById('modalPreviewImage');
+    const modalTitle = document.getElementById('imagePreviewModalLabel');
+    const downloadBtn = document.getElementById('modalDownloadBtn');
+    
+    modalImg.src = imageSrc;
+    modalTitle.textContent = title || 'معاينة المستند';
+    downloadBtn.href = imageSrc;
+    
+    const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

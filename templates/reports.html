@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+
+{% block title %}التقارير والإحصائيات - نظام مُستأجِر{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <!-- App Topbar -->
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-chart-pie text-primary"></i>
+                            التقارير والإحصائيات
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">مؤشرات الأداء، فلترة المستأجرين وسجلات التنبيهات المؤتمتة</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button onclick="window.print()" class="btn btn-outline-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-print me-1"></i>
+                        <span class="d-none d-md-inline">طباعة التقرير</span>
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        <span class="d-none d-md-inline">لوحة التحكم</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+                <!-- 4 KPI Modern Metric Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="stat-card-title">إجمالي المستأجرين</span>
+                                <div class="stat-icon-wrapper teal">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value">{{ total_tenants }}</div>
+                            <div class="stat-trend positive">
+                                <i class="fas fa-database me-1"></i>قاعدة البيانات النشطة
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="stat-card-title">أرقام الهواتف المسجلة</span>
+                                <div class="stat-icon-wrapper green">
+                                    <i class="fas fa-phone-volume"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value">{{ tenants_with_phone }}</div>
+                            <div class="stat-trend positive">
+                                <i class="fas fa-circle-check me-1"></i>
+                                {% if total_tenants > 0 %}
+                                {{ ((tenants_with_phone / total_tenants) * 100)|round|int }}% من المستأجرين
+                                {% else %}
+                                100%
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="stat-card-title">عقود بتواريخ انتهاء</span>
+                                <div class="stat-icon-wrapper amber">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value">{{ tenants_with_end_date }}</div>
+                            <div class="stat-trend neutral">
+                                <i class="fas fa-clock me-1"></i>مؤهلة للتنبيه الآلي
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="stat-card-title">إجمالي الإشعارات</span>
+                                <div class="stat-icon-wrapper blue">
+                                    <i class="fas fa-paper-plane"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value">{{ total_notifications }}</div>
+                            <div class="stat-trend positive">
+                                <i class="fas fa-check-double me-1"></i>{{ successful_notifications }} إشعار ناجح
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modern Filter Card -->
+                <div class="filter-glass-card mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                        <h5 class="fw-bold text-dark mb-0 fs-6">
+                            <i class="fas fa-filter text-primary me-2"></i>
+                            تصفية وتحديد بيانات المستأجرين
+                        </h5>
+                        {% if request.args.get('filter_type') %}
+                        <a href="{{ url_for('reports') }}" class="btn btn-sm btn-outline-danger py-0 px-2 rounded-pill">
+                            <i class="fas fa-rotate-left me-1"></i>إلغاء الفلتر
+                        </a>
+                        {% endif %}
+                    </div>
+                    <form method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label for="filter_type" class="form-label small fw-bold text-dark">نوع التصنيف المطلوب</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0">
+                                    <i class="fas fa-list-check"></i>
+                                </span>
+                                <select class="form-select border-start-0" id="filter_type" name="filter_type">
+                                    <option value="">جميع المستأجرين (بدون فلترة)</option>
+                                    <option value="expiring_soon" {% if request.args.get('filter_type') == 'expiring_soon' %}selected{% endif %}>العقود التي قاربت على الانتهاء</option>
+                                    <option value="expired" {% if request.args.get('filter_type') == 'expired' %}selected{% endif %}>العقود المنتهية بالفعل</option>
+                                    <option value="no_phone" {% if request.args.get('filter_type') == 'no_phone' %}selected{% endif %}>مستأجرين بدون أرقام هواتف</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4" id="days_filter_container">
+                            <label for="days_filter" class="form-label small fw-bold text-dark">نطاق الأيام المتبقية</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </span>
+                                <select class="form-select border-start-0" id="days_filter" name="days_filter">
+                                    <option value="30" {% if request.args.get('days_filter') == '30' %}selected{% endif %}>خلال 30 يوم قادمة</option>
+                                    <option value="60" {% if request.args.get('days_filter') == '60' %}selected{% endif %}>خلال 60 يوم قادمة</option>
+                                    <option value="90" {% if request.args.get('days_filter') == '90' %}selected{% endif %}>خلال 90 يوم قادمة</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-magnifying-glass me-1"></i>تطبيق الفلتر
+                            </button>
+                            <a href="{{ url_for('reports') }}" class="btn btn-outline-secondary" title="إعادة ضبط">
+                                <i class="fas fa-rotate"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filtered Results Table -->
+                {% if request.args.get('filter_type') %}
+                <div class="card border shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                            <i class="fas fa-table-list text-primary me-2"></i>
+                            {% if request.args.get('filter_type') == 'expiring_soon' %}
+                                نتائج: العقود التي قاربت على الانتهاء
+                            {% elif request.args.get('filter_type') == 'expired' %}
+                                نتائج: العقود المنتهية
+                            {% elif request.args.get('filter_type') == 'no_phone' %}
+                                نتائج: المستأجرين بدون أرقام هواتف
+                            {% else %}
+                                نتائج الفلترة
+                            {% endif %}
+                            <span class="badge bg-primary rounded-pill ms-2">{{ filtered_tenants|length }} مستأجر</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if filtered_tenants %}
+                        <!-- Responsive Table wrapper conforming to modern-web-guidance -->
+                        <div tabindex="0" role="region" aria-labelledby="filtered-table-caption" class="table-wrapper">
+                            <table class="table align-middle mb-0">
+                                <caption id="filtered-table-caption" class="visually-hidden">نتائج فلترة المستأجرين</caption>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">#</th>
+                                        <th>اسم المستأجر</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>تاريخ البدء</th>
+                                        <th>تاريخ الانتهاء</th>
+                                        {% if request.args.get('filter_type') == 'expiring_soon' %}
+                                        <th>المهلة المتبقية</th>
+                                        {% endif %}
+                                        <th class="text-center" style="width: 140px;">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tenant in filtered_tenants %}
+                                    <tr>
+                                        <td class="text-muted fw-bold">{{ tenant[0] }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="tenant-avatar" style="width: 34px; height: 34px; font-size: 0.95rem;">
+                                                    {{ tenant[1][:1] }}
+                                                </div>
+                                                <div class="fw-bold text-dark">{{ tenant[1] }}</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if tenant[2] %}
+                                            <a href="{{ tenant[2]|whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-success fw-bold" title="مراسلة عبر واتساب">
+                                                <i class="fab fa-whatsapp me-1"></i>{{ tenant[2] }}
+                                            </a>
+                                            {% else %}
+                                            <span class="badge bg-light text-muted border">غير مسجل</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border">{{ tenant[3] if tenant[3] else '---' }}</span></td>
+                                        <td><span class="badge bg-light text-dark border">{{ tenant[4] if tenant[4] else '---' }}</span></td>
+                                        {% if request.args.get('filter_type') == 'expiring_soon' %}
+                                        <td>
+                                            {% if tenant|length > 5 %}
+                                                {% set days = tenant[5] %}
+                                                {% if days <= 10 %}
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                                                    <i class="fas fa-triangle-exclamation me-1"></i>{{ days }} يوم متبقي
+                                                </span>
+                                                {% elif days <= 30 %}
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">
+                                                    <i class="fas fa-clock me-1"></i>{{ days }} يوم متبقي
+                                                </span>
+                                                {% else %}
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">
+                                                    {{ days }} يوم
+                                                </span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">---</span>
+                                            {% endif %}
+                                        </td>
+                                        {% endif %}
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('view_tenant', tenant_id=tenant[0]) }}" class="btn btn-outline-secondary" title="عرض تفاصيل المستأجر">
+                                                    <i class="fas fa-eye text-primary"></i>
+                                                </a>
+                                                <a href="{{ url_for('edit_tenant', tenant_id=tenant[0]) }}" class="btn btn-outline-secondary" title="تعديل">
+                                                    <i class="fas fa-edit text-warning"></i>
+                                                </a>
+                                                {% if tenant[2] %}
+                                                <a href="{{ tenant[2]|whatsapp_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary" title="واتساب">
+                                                    <i class="fab fa-whatsapp text-success"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-circle-info fa-3x mb-2 text-secondary opacity-50"></i>
+                            <h6 class="fw-bold">لا توجد بيانات تطابق الفلتر المحدد</h6>
+                            <p class="small mb-0">جرّب تغيير نوع الفلتر أو زيادة نطاق الأيام</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Notification Analytics & Success Rate -->
+                <div class="row g-4 mb-4">
+                    <!-- Notification Success Rate -->
+                    <div class="col-lg-6">
+                        <div class="card border shadow-sm h-100">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    معدل تسليم ونجاح الإشعارات
+                                </h5>
+                            </div>
+                            <div class="card-body p-4 d-flex flex-column justify-content-center">
+                                {% if total_notifications > 0 %}
+                                    {% set success_rate = (successful_notifications / total_notifications * 100) | round(1) %}
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div>
+                                            <div class="display-6 fw-bold text-success">{{ success_rate }}%</div>
+                                            <div class="text-muted small">نسبة الإرسال الناجح التراكمية</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fs-6">
+                                                {{ successful_notifications }} ناجح من {{ total_notifications }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="height: 12px; border-radius: 6px; background-color: #e2e8f0;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ success_rate }}%; border-radius: 6px;" 
+                                             aria-valuenow="{{ success_rate }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between text-muted small mt-2">
+                                        <span>0%</span>
+                                        <span>50%</span>
+                                        <span>100% (أداء مثالي)</span>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="fas fa-bell-slash fa-3x mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0">لا توجد إشعارات مسجلة لحساب المعدل حتى الآن</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications by Type Breakdown -->
+                    <div class="col-lg-6">
+                        <div class="card border shadow-sm h-100">
+                            <div class="card-header bg-white py-3">
+                                <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                                    <i class="fas fa-chart-column text-primary me-2"></i>
+                                    توزيع الإشعارات حسب النوع
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                {% if notifications_by_type %}
+                                    {% for notification in notifications_by_type %}
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-dark small">
+                                                <i class="fas fa-tag text-teal me-1"></i>
+                                                {{ notification[0] }}
+                                            </span>
+                                            <strong class="text-primary small">{{ notification[1] }} إشعار</strong>
+                                        </div>
+                                        <div class="progress" style="height: 8px; border-radius: 4px; background-color: #f1f5f9;">
+                                            <div class="progress-bar bg-teal" role="progressbar" 
+                                                 style="width: {{ (notification[1] / total_notifications * 100)|round|int }}%;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="fas fa-chart-pie fa-3x mb-2 text-secondary opacity-50"></i>
+                                        <p class="mb-0">لا توجد سجلات تنبيهات بحسب الأنواع</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Notifications Log -->
+                {% if recent_notifications %}
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 fw-bold fs-6 text-dark">
+                            <i class="fas fa-clock-rotate-left text-primary me-2"></i>
+                            أحدث سجلات الإشعارات الصادرة (آخر 10 تنبيهات)
+                        </h5>
+                        <span class="badge bg-light text-secondary border">سجل النظام المباشر</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div tabindex="0" role="region" aria-labelledby="recent-notifs-caption" class="table-wrapper">
+                            <table class="table align-middle mb-0">
+                                <caption id="recent-notifs-caption" class="visually-hidden">أحدث سجلات الإشعارات الصادرة</caption>
+                                <thead>
+                                    <tr>
+                                        <th>اسم المستأجر</th>
+                                        <th>نوع التنبيه</th>
+                                        <th>حالة الإرسال</th>
+                                        <th>تاريخ ووقت الإرسال</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for notif in recent_notifications %}
+                                    <tr>
+                                        <td class="fw-bold text-dark">{{ notif[0] }}</td>
+                                        <td>
+                                            {% if notif[1] == 'شهري' %}
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">{{ notif[1] }}</span>
+                                            {% else %}
+                                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">{{ notif[1] }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if notif[2] == 'نجح' %}
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                                    <i class="fas fa-check-circle me-1"></i>نجح الإرسال
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
+                                                    <i class="fas fa-circle-xmark me-1"></i>فشل
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-muted small">
+                                            <i class="fas fa-clock me-1"></i>{{ notif[3] }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// Filter type change handler
+document.addEventListener('DOMContentLoaded', function() {
+    const filterType = document.getElementById('filter_type');
+    const daysContainer = document.getElementById('days_filter_container');
+    
+    function updateDaysVisibility() {
+        if (filterType.value === 'expiring_soon') {
+            daysContainer.style.display = 'block';
+        } else {
+            daysContainer.style.display = 'none';
+        }
+    }
+    
+    filterType.addEventListener('change', updateDaysVisibility);
+    updateDaysVisibility();
+});
+</script>
+{% endblock %}

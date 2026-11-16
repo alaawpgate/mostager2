@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة مستأجر جديد - تصميم العقد{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <!-- Main content -->
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-file-signature text-primary"></i>
+                            تصميم وتوليد عقد الإيجار
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">معاينة صفحات العقد وتعبئة بيانات المستأجر والشيكات</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-success d-none d-sm-inline-flex" onclick="saveContract()">
+                        <i class="fas fa-save me-1"></i>
+                        <span>حفظ المستأجر والعقد</span>
+                    </button>
+                    <a href="{{ url_for('view_tenants') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>العودة</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            <!-- تبويبات العقد -->
+            <ul class="nav nav-tabs mb-4" id="contractTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="page1-tab" data-bs-toggle="tab" data-bs-target="#page1" type="button" role="tab">
+                        <i class="fas fa-file-alt"></i>
+                        الصفحة الأولى
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="page2-tab" data-bs-toggle="tab" data-bs-target="#page2" type="button" role="tab">
+                        <i class="fas fa-file-alt"></i>
+                        الصفحة الثانية
+                    </button>
+                </li>
+            </ul>
+
+            <!-- محتوى التبويبات -->
+            <div class="tab-content" id="contractTabsContent">
+                <!-- الصفحة الأولى -->
+                <div class="tab-pane fade show active" id="page1" role="tabpanel">
+                    <div class="contract-page" id="contractPage1">
+                        <!-- سيتم تحميل محتوى contract_page_one.html هنا -->
+                    </div>
+                </div>
+
+                <!-- الصفحة الثانية -->
+                <div class="tab-pane fade" id="page2" role="tabpanel">
+                    <div class="contract-page" id="contractPage2">
+                        <!-- سيتم تحميل محتوى contract_page_two.html هنا -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="previousPage()">
+                            <i class="fas fa-arrow-right"></i>
+                            الصفحة السابقة
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="nextPage()">
+                            الصفحة التالية
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal لتأكيد الحفظ -->
+<div class="modal fade" id="saveConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد حفظ البيانات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>هل أنت متأكد من حفظ بيانات المستأجر والعقد؟</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    سيتم حفظ جميع البيانات المدخلة في العقد كبيانات المستأجر الجديد.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" onclick="confirmSave()">
+                    <i class="fas fa-check"></i>
+                    تأكيد الحفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contract-page {
+        max-width: 8.5in;
+        min-height: 11in;
+        margin: 0 auto;
+        background: white;
+        padding: 2.5rem;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    .nav-tabs .nav-link {
+        border-radius: 10px 10px 0 0;
+        margin-left: 5px;
+    }
+
+    .nav-tabs .nav-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+    }
+
+    .tab-content {
+        border: 1px solid #dee2e6;
+        border-radius: 0 10px 10px 10px;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+
+    /* تنسيق العقد */
+    .contract-page input[type="text"],
+    .contract-page input[type="number"],
+    .contract-page input[type="date"],
+    .contract-page textarea,
+    .contract-page select {
+        border: none;
+        border-bottom: 1px solid #ccc;
+        background: transparent;
+        padding: 5px 0;
+        font-family: inherit;
+        font-size: inherit;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.3s ease;
+    }
+
+    .contract-page input:focus,
+    .contract-page textarea:focus,
+    .contract-page select:focus {
+        border-bottom-color: #667eea;
+        box-shadow: 0 1px 0 0 #667eea;
+    }
+
+    .contract-page .form-group {
+        margin-bottom: 15px;
+        position: relative;
+    }
+
+    .contract-page .form-label {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+        display: inline-block;
+    }
+
+    /* تأثيرات بصرية */
+    .btn-group .btn {
+        border-radius: 25px;
+        margin: 0 5px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-group .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* تحسين المظهر للطباعة */
+    @media print {
+        .nav-tabs,
+        .btn-group,
+        .modal,
+        .sidebar {
+            display: none !important;
+        }
+        
+        .contract-page {
+            box-shadow: none;
+            margin: 0;
+            padding: 1rem;
+        }
+        
+        .tab-content {
+            border: none;
+            padding: 0;
+        }
+        
+        main {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+const totalPages = 2;
+
+// تحميل محتوى صفحات العقد
+$(document).ready(function() {
+    loadContractPage(1);
+    loadContractPage(2);
+});
+
+// تحميل صفحة العقد
+function loadContractPage(pageNumber) {
+    if (pageNumber === 1) {
+        loadPage1Content();
+    } else {
+        loadPage2Content();
+    }
+}
+
+// تحميل محتوى الصفحة الأولى
+function loadPage1Content() {
+    const content = `
+        <div class="contract-header text-center mb-4">
+            <div class="logo mb-3">
+                <img src="/static/images/logo.png" alt="Logo" style="max-height: 80px;" onerror="this.style.display='none'">
+            </div>
+            <div class="contract-title">
+                <h1 class="mb-2">وثيقة عقد إيجار</h1>
+                <h2 class="h4 text-muted">Tenancy Contract</h2>
+            </div>
+            <div class="contract-number mt-3">
+                <strong>رقم العقد / Contract No:</strong>
+                <input type="text" id="contract_number" placeholder="يتم إنشاؤه تلقائياً" readonly class="form-control d-inline-block w-auto">
+            </div>
+        </div>
+
+        <div class="contract-content">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">اسم المؤجر / Lessor Name:</label>
+                        <input type="text" id="lessor_name" placeholder="أدخل اسم المؤجر" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">رقم هوية المؤجر / Lessor ID:</label>
+                        <input type="text" id="lessor_id" placeholder="أدخل رقم الهوية" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">اسم المستأجر / Tenant Name:</label>
+                        <input type="text" id="tenant_name" placeholder="أدخل اسم المستأجر" required class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">رقم هوية المستأجر / Tenant ID:</label>
+                        <input type="text" id="tenant_id" placeholder="أدخل رقم الهوية" required class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">رقم الهاتف / Mobile Number:</label>
+                        <input type="text" id="mobile" placeholder="أدخل رقم الهاتف" required class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">الجنسية / Nationality:</label>
+                        <input type="text" id="nationality" placeholder="أدخل الجنسية" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">رقم الوحدة / Unit Number:</label>
+                        <input type="text" id="unit_number" placeholder="رقم الوحدة" required class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">رقم العقار / Property Number:</label>
+                        <input type="text" id="property_number" placeholder="رقم العقار" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">استخدام الوحدة / Unit Usage:</label>
+                        <select id="unit_usage" class="form-control">
+                            <option value="Family Residence">سكن عائلي</option>
+                            <option value="Single Residence">سكن فردي</option>
+                            <option value="Commercial">تجاري</option>
+                            <option value="Office">مكتب</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="form-label">عنوان العقار / Property Address:</label>
+                        <textarea id="property_address" rows="2" placeholder="أدخل عنوان العقار كاملاً" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">قيمة الإيجار / Rent Amount:</label>
+                        <input type="number" id="rent_amount" placeholder="0" required class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">تاريخ البداية / Start Date:</label>
+                        <input type="date" id="start_date" required class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">تاريخ النهاية / End Date:</label>
+                        <input type="date" id="end_date" required class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">مدة العقد (شهر) / Duration:</label>
+                        <input type="number" id="contract_duration" placeholder="12" readonly class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#contractPage1').html(content);
+    
+    // إضافة مستمعات الأحداث
+    $('#start_date, #end_date').on('change', calculateDuration);
+    generateContractNumber();
+}
+
+// تحميل محتوى الصفحة الثانية
+function loadPage2Content() {
+    const content = `
+        <div class="contract-content">
+            <h3 class="mb-4 text-center">شروط وأحكام العقد / Terms and Conditions</h3>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">مبلغ التأمين / Security Deposit:</label>
+                        <input type="number" id="security_deposit" placeholder="0" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">طريقة الدفع / Payment Method:</label>
+                        <select id="payment_method" class="form-control">
+                            <option value="Monthly">شهري</option>
+                            <option value="Quarterly">ربع سنوي</option>
+                            <option value="Semi-Annual">نصف سنوي</option>
+                            <option value="Annual">سنوي</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="form-label">الشروط الخاصة / Special Terms:</label>
+                        <textarea id="special_terms" rows="4" placeholder="أدخل أي شروط خاصة للعقد..." class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="form-label">ملاحظات إضافية / Additional Notes:</label>
+                        <div id="notes_container">
+                            <div class="note-item mb-2">
+                                <div class="input-group">
+                                    <input type="text" class="form-control note-input" placeholder="أدخل ملاحظة...">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNote(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addNote()">
+                            <i class="fas fa-plus"></i>
+                            إضافة ملاحظة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-6">
+                    <div class="signature-section text-center">
+                        <h5>توقيع المؤجر / Lessor Signature</h5>
+                        <div class="signature-line mt-4">
+                            <hr style="border: 1px solid #000; width: 200px; margin: 0 auto;">
+                            <small class="text-muted">التوقيع والتاريخ</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="signature-section text-center">
+                        <h5>توقيع المستأجر / Tenant Signature</h5>
+                        <div class="signature-line mt-4">
+                            <hr style="border: 1px solid #000; width: 200px; margin: 0 auto;">
+                            <small class="text-muted">التوقيع والتاريخ</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#contractPage2').html(content);
+}
+
+// التنقل بين الصفحات
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        $(`#page${currentPage}-tab`).tab('show');
+    }
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        $(`#page${currentPage}-tab`).tab('show');
+    }
+}
+
+// تحديث رقم الصفحة الحالية عند تغيير التبويب
+$('#contractTabs button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+    const targetId = e.target.getAttribute('data-bs-target');
+    currentPage = targetId === '#page1' ? 1 : 2;
+});
+
+// حساب مدة العقد
+function calculateDuration() {
+    const startDate = new Date($('#start_date').val());
+    const endDate = new Date($('#end_date').val());
+    
+    if (startDate && endDate && endDate > startDate) {
+        const diffTime = Math.abs(endDate - startDate);
+        const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
+        $('#contract_duration').val(diffMonths);
+    }
+}
+
+// إنشاء رقم العقد
+function generateContractNumber() {
+    const now = new Date();
+    const contractNumber = `CT-${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}-${Math.floor(Math.random()*1000).toString().padStart(3,'0')}`;
+    $('#contract_number').val(contractNumber);
+}
+
+// إضافة ملاحظة جديدة
+function addNote() {
+    const noteHtml = `
+        <div class="note-item mb-2">
+            <div class="input-group">
+                <input type="text" class="form-control note-input" placeholder="أدخل ملاحظة...">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeNote(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    $('#notes_container').append(noteHtml);
+}
+
+// حذف ملاحظة
+function removeNote(button) {
+    $(button).closest('.note-item').remove();
+}
+
+// حفظ العقد
+function saveContract() {
+    // التحقق من البيانات المطلوبة
+    const requiredFields = ['tenant_name', 'tenant_id', 'mobile', 'unit_number', 'rent_amount', 'start_date', 'end_date'];
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        const value = $(`#${field}`).val();
+        if (!value || value.trim() === '') {
+            $(`#${field}`).addClass('is-invalid');
+            isValid = false;
+        } else {
+            $(`#${field}`).removeClass('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        alert('يرجى ملء جميع الحقول المطلوبة');
+        return;
+    }
+    
+    // عرض modal التأكيد
+    $('#saveConfirmModal').modal('show');
+}
+
+// تأكيد الحفظ
+function confirmSave() {
+    // جمع البيانات من النموذج
+    const tenantData = {
+        tenant_name: $('#tenant_name').val(),
+        tenant_phone: $('#mobile').val(),
+        start_date: $('#start_date').val(),
+        end_date: $('#end_date').val(),
+        page_one_content: getPage1Content(),
+        page_two_content: getPage2Content()
+    };
+    
+    // إرسال البيانات للخادم
+    $.ajax({
+        url: '{{ url_for("add_tenant") }}',
+        method: 'POST',
+        data: tenantData,
+        success: function(response) {
+            $('#saveConfirmModal').modal('hide');
+            alert('تم حفظ بيانات المستأجر والعقد بنجاح!');
+            window.location.href = '{{ url_for("view_tenants") }}';
+        },
+        error: function(xhr, status, error) {
+            alert('حدث خطأ أثناء حفظ البيانات: ' + error);
+        }
+    });
+}
+
+// الحصول على محتوى الصفحة الأولى
+function getPage1Content() {
+    return $('#contractPage1').html();
+}
+
+// الحصول على محتوى الصفحة الثانية
+function getPage2Content() {
+    return $('#contractPage2').html();
+}
+
+// تحميل البيانات الافتراضية
+$(document).ready(function() {
+    loadDefaultContractData();
+});
+
+function loadDefaultContractData() {
+    // إعداد التواريخ الافتراضية
+    setTimeout(() => {
+        const today = new Date().toISOString().split('T')[0];
+        $('#start_date').val(today);
+        
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        $('#end_date').val(nextYear.toISOString().split('T')[0]);
+        
+        calculateDuration();
+    }, 500);
+}
+</script>
+{% endblock %}

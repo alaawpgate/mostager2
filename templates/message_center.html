@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}مركز الرسائل{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fab fa-whatsapp text-success"></i>
+                            مركز الرسائل والتواصل
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">إرسال رسائل فردية، حملات جماعية وإدارة نماذج الواتساب</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>العودة للرئيسية</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            <!-- إحصائيات سريعة -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-file-alt fa-2x text-primary mb-2"></i>
+                            <h5 class="card-title">{{ templates_count }}</h5>
+                            <p class="card-text">قوالب الرسائل</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                            <h5 class="card-title">{{ pending_scheduled }}</h5>
+                            <p class="card-text">رسائل مجدولة</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-bullhorn fa-2x text-info mb-2"></i>
+                            <h5 class="card-title">{{ draft_campaigns }}</h5>
+                            <p class="card-text">حملات مسودة</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-paper-plane fa-2x text-success mb-2"></i>
+                            <h5 class="card-title">{{ recent_messages|length }}</h5>
+                            <p class="card-text">رسائل حديثة</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الأدوات السريعة -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tools me-2"></i>
+                                الأدوات السريعة
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2">
+                                    <a href="{{ url_for('message_templates') }}" class="btn btn-primary w-100">
+                                        <i class="fas fa-file-alt me-2"></i>
+                                        إدارة القوالب
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="{{ url_for('bulk_messages') }}" class="btn btn-info w-100">
+                                        <i class="fas fa-bullhorn me-2"></i>
+                                        رسائل جماعية
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <a href="{{ url_for('scheduled_messages') }}" class="btn btn-warning w-100">
+                                        <i class="fas fa-clock me-2"></i>
+                                        رسائل مجدولة
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <button class="btn btn-success w-100" onclick="showCustomMessageModal()">
+                                        <i class="fas fa-edit me-2"></i>
+                                        رسالة مخصصة
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- آخر الرسائل المرسلة -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2"></i>
+                                آخر الرسائل المرسلة
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_messages %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>المستأجر</th>
+                                            <th>نوع الرسالة</th>
+                                            <th>الحالة</th>
+                                            <th>التاريخ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for message in recent_messages %}
+                                        <tr>
+                                            <td>{{ message[0] }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ message[1] }}</span>
+                                            </td>
+                                            <td>
+                                                {% if message[2] == 'نجح' %}
+                                                    <span class="badge bg-success">{{ message[2] }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">{{ message[2] }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ message[3] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>لا توجد رسائل مرسلة حتى الآن</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- نافذة الرسالة المخصصة -->
+<div class="modal fade" id="customMessageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إرسال رسالة مخصصة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customMessageForm">
+                    <div class="mb-3">
+                        <label for="tenantSelect" class="form-label">اختر المستأجر</label>
+                        <select class="form-select" id="tenantSelect" required>
+                            <option value="">-- اختر المستأجر --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="messageContent" class="form-label">محتوى الرسالة</label>
+                        <textarea class="form-control" id="messageContent" rows="5" required 
+                                  placeholder="اكتب رسالتك هنا... يمكنك استخدام {{name}} لإدراج اسم المستأجر"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="sendCustomMessage()">إرسال الرسالة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCustomMessageModal() {
+    // تحميل قائمة المستأجرين
+    fetch('/api/tenants')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('tenantSelect');
+            select.innerHTML = '<option value="">-- اختر المستأجر --</option>';
+            
+            data.forEach(tenant => {
+                if (tenant.tenant_phone) {
+                    const option = document.createElement('option');
+                    option.value = tenant.id;
+                    option.textContent = tenant.tenant_name;
+                    select.appendChild(option);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading tenants:', error);
+        });
+    
+    const modal = new bootstrap.Modal(document.getElementById('customMessageModal'));
+    modal.show();
+}
+
+function sendCustomMessage() {
+    const tenantId = document.getElementById('tenantSelect').value;
+    const messageContent = document.getElementById('messageContent').value;
+    
+    if (!tenantId || !messageContent) {
+        alert('يرجى ملء جميع الحقول');
+        return;
+    }
+    
+    fetch('/send-custom-message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            tenant_id: tenantId,
+            message_content: messageContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('تم إرسال الرسالة بنجاح');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('customMessageModal'));
+            modal.hide();
+            location.reload();
+        } else {
+            alert('فشل في إرسال الرسالة: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('حدث خطأ في إرسال الرسالة');
+    });
+}
+</script>
+
+{% endblock %}

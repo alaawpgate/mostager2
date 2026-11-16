@@ -1,0 +1,242 @@
+<style>
+    .contract-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+    .contract-header img {
+        max-height: 80px;
+    }
+    .contract-title h1, .contract-title h2 {
+        margin: 0;
+        text-align: center;
+        font-weight: bold;
+    }
+    .contract-title h1 {
+        font-size: 24px;
+    }
+    div#page_one_container,div#page_two_container {
+    direction: ltr;
+}
+    .contract-title h2 {
+        font-size: 22px;
+        font-family: 'Roboto', sans-serif;
+    }
+    .section-header {
+        background-color: #6b2b2b;
+        color: white;
+        padding: 8px 15px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        font-size: 16px;
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+    .data-table td {
+        border: 1px solid black;
+        padding: 8px;
+        vertical-align: middle;
+        font-size: 14px;
+    }
+    .label-en {
+        text-align: left;
+        font-weight: bold;
+        width: 20%;
+        font-family: 'Roboto', sans-serif;
+        direction: ltr;
+    }
+    .label-ar {
+        text-align: right;
+        font-weight: bold;
+        width: 20%;
+    }
+    .data-value {
+        text-align: center;
+    }
+    .data-value[contenteditable="true"] {
+        background-color: #fcfcfc;
+        cursor: pointer;
+    }
+    .contract-footer {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ddd;
+    }
+    .qr-code img {
+        width: 120px;
+        height: 120px;
+    }
+    .seal img {
+        width: 150px;
+    }
+    .contact-info {
+        font-size: 24px;
+        font-weight: bold;
+        color: #cc0000;
+    }
+</style>
+
+<!-- Header -->
+<header class="contract-header">
+    <div>
+    </div>
+    <div class="contract-title">
+        <h1>وثيقــــة عقــــد إيجــــار</h1>
+        <h2>TENANCY CONTRACT</h2>
+    </div>
+    <div>
+    </div>
+</header>
+
+<!-- Leasor Details -->
+<div class="section-header">
+    <span>LEASOR DETAILS</span>
+    <span>تفاصيل المؤجر</span>
+</div>
+<table class="data-table">
+    <tbody>
+        <tr>
+            <td class="label-en">NAME:</td>
+            <td class="data-value" contenteditable="true">HAZEEM MOHAMMAD OBAID ALQATAMI ALSUWAIDI</td>
+            <td class="label-ar">: الاسم</td>
+        </tr>
+        <tr>
+            <td class="label-en">MOBILE No.</td>
+            <td class="data-value" contenteditable="true">0506555778</td>
+            <td class="label-ar">رقم الهاتف المتحرك</td>
+        </tr>
+        <tr>
+            <td class="label-en">ID #</td>
+            <td class="data-value" contenteditable="true">784-1965-3975208-7</td>
+            <td class="label-ar">رقم الهوية</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Tenant Details -->
+<div class="section-header">
+    <span>TENANT DETAILS</span>
+    <span>تفاصيل المستأجر</span>
+</div>
+<table class="data-table">
+    <tbody>
+        <tr>
+            <td class="label-en">NAME:</td>
+            <td class="data-value" contenteditable="true" id="tenant_name_field">TAWFIQ ATA DEEB AYOUB</td>
+            <td class="label-ar">: الاسم</td>
+        </tr>
+        <tr>
+            <td class="label-en">MOBILE No.</td>
+            <td class="data-value" contenteditable="true">0507899302</td>
+            <td class="label-ar">رقم الهاتف المتحرك</td>
+        </tr>
+        <tr>
+            <td class="label-en">ID #</td>
+            <td class="data-value" contenteditable="true">784-1965-5905376-2</td>
+            <td class="label-ar">رقم الهوية</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Leased Unit Details -->
+<div class="section-header">
+    <span>LEASED UNIT DETAILS</span>
+    <span>تفاصيل الوحدة المؤجرة</span>
+</div>
+<table class="data-table">
+    <tbody>
+        <tr>
+            <td class="label-en" style="width: 15%;">UNIT USAGE</td>
+            <td class="data-value" style="width: 18.33%;" contenteditable="true">Family Residence</td>
+            <td class="label-ar" style="width: 15%;">استخدام الوحدة</td>
+            <td class="label-en" style="width: 15%;">UNIT No.</td>
+            <td class="data-value" style="width: 18.33%;" contenteditable="true">504</td>
+            <td class="label-ar" style="width: 15%;">رقم الوحدة</td>
+        </tr>
+        <tr>
+            <td class="label-en">UNIT No.</td>
+            <td class="data-value" contenteditable="true">PROPA56720313</td>
+            <td class="label-ar">رقم العقار</td>
+            <td class="label-en">LOCATION</td>
+            <td class="data-value" contenteditable="true">TOWN CENTER</td>
+            <td class="label-ar">المنطقة</td>
+        </tr>
+        <tr>
+            <td class="label-en">BLOCK No.</td>
+            <td class="data-value" contenteditable="true">A</td>
+            <td class="label-ar">المربع</td>
+            <td class="label-en">PLOT No.</td>
+            <td class="data-value" contenteditable="true">5</td>
+            <td class="label-ar">رقم القطعة</td>
+        </tr>
+        <tr>
+            <td class="label-en">UNIT TYPE</td>
+            <td class="data-value" contenteditable="true">3 BHK</td>
+            <td class="label-ar">نوع الوحدة</td>
+            <td class="label-en">MAKANI No.</td>
+            <td class="data-value" contenteditable="true">********</td>
+            <td class="label-ar">رقم مكاني</td>
+        </tr>
+        <tr>
+            <td class="label-en">ETIHAD WE No.</td>
+            <td class="data-value" contenteditable="true">2000034793</td>
+            <td class="label-ar">رقم الكهرباء</td>
+            <td colspan="3"></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Contract Details -->
+<div class="section-header">
+    <span>CONTRACT DETAILS</span>
+    <span>تفاصيل العقد</span>
+</div>
+<table class="data-table">
+     <tbody>
+        <tr>
+            <td class="label-en" style="width: 15%;">CONTRACT NO</td>
+            <td class="data-value" colspan="2" contenteditable="true">RENT25061768</td>
+            <td class="label-ar" style="width: 15%;">رقم العقد</td>
+        </tr>
+         <tr>
+            <td class="label-en">CONTRACT AMOUNT (AED)</td>
+            <td class="data-value" colspan="2" contenteditable="true">28000.00</td>
+            <td class="label-ar">قيمة العقد</td>
+        </tr>
+         <tr>
+            <td class="label-en">CONTRACT PERIOD</td>
+            <td class="data-value" colspan="2" contenteditable="true">One Year</td>
+            <td class="label-ar">مدة العقد</td>
+        </tr>
+        <tr>
+            <td class="label-en">START DATE</td>
+            <td class="data-value" contenteditable="true">22/6/2025</td>
+            <td class="label-ar">تاريخ البدء</td>
+            <td rowspan="2" class="label-ar" style="vertical-align: top; text-align: right;">الدفع و أي شروط</td>
+        </tr>
+        <tr>
+            <td class="label-en">END DATE</td>
+            <td class="data-value" contenteditable="true">21/6/2026</td>
+            <td class="label-ar">تاريخ الانتهاء</td>
+        </tr>
+        <tr>
+            <td class="label-en">PAYENT & OTHER TERMS</td>
+            <td colspan="3" contenteditable="true" style="height: 60px;"></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Footer -->
+<div class="contract-footer text-center">
+     <p class="mb-3" style="color: #6b2b2b; font-weight: bold;">هذا العقد معتمد رقمياً و صادر من جمهورية مصر العربية</p>
+     <p class="mb-4" style="font-family: 'Roboto', sans-serif; direction: ltr;">This is a digitally certified contract issued from Fujairah Municipality</p>
+     
+ 
+</div>

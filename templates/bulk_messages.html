@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}الرسائل الجماعية{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-bullhorn text-primary"></i>
+                            إدارة الرسائل الجماعية
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">إنشاء حملات رسائل موجهة لجميع المستأجرين أو مجموعات مخصصة</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button class="btn btn-primary d-none d-sm-inline-flex" onclick="showCampaignModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        <span>إنشاء حملة جديدة</span>
+                    </button>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            <!-- الحملات -->
+            {% if campaigns %}
+            <div class="row">
+                {% for campaign in campaigns %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{{ campaign[1] }}</h6>
+                            {% if campaign[6] == 'draft' %}
+                                <span class="badge bg-secondary">مسودة</span>
+                            {% elif campaign[6] == 'completed' %}
+                                <span class="badge bg-success">مكتملة</span>
+                            {% else %}
+                                <span class="badge bg-primary">{{ campaign[6] }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <div class="message-preview mb-3" style="max-height: 100px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                                <small>{{ campaign[2][:100] }}{% if campaign[2]|length > 100 %}...{% endif %}</small>
+                            </div>
+                            
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="text-primary">
+                                        <i class="fas fa-users"></i>
+                                        <div class="small">المستهدفين</div>
+                                        <strong>{{ campaign[4] }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-success">
+                                        <i class="fas fa-check"></i>
+                                        <div class="small">تم الإرسال</div>
+                                        <strong>{{ campaign[5] }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="text-danger">
+                                        <i class="fas fa-times"></i>
+                                        <div class="small">فشل</div>
+                                        <strong>{{ campaign[6] }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                {% if campaign[6] == 'draft' %}
+                                <button class="btn btn-sm btn-success" onclick="sendCampaign({{ campaign[0] }})">
+                                    <i class="fas fa-paper-plane me-1"></i>
+                                    إرسال الحملة
+                                </button>
+                                {% endif %}
+                                
+                                <button class="btn btn-sm btn-outline-info" onclick="viewCampaignDetails({{ campaign[0] }})">
+                                    <i class="fas fa-eye me-1"></i>
+                                    التفاصيل
+                                </button>
+                                
+                                <small class="text-muted align-self-center">
+                                    {{ campaign[7] }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center mt-5">
+                <i class="fas fa-bullhorn fa-5x text-muted mb-3"></i>
+                <h4>لا توجد حملات رسائل</h4>
+                <p class="text-muted">ابدأ بإنشاء حملة رسائل جماعية جديدة</p>
+                <button class="btn btn-primary" onclick="showCampaignModal()">
+                    <i class="fas fa-plus me-2"></i>
+                    إنشاء حملة جديدة
+                </button>
+            </div>
+            {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- نافذة إنشاء حملة جديدة -->
+<div class="modal fade" id="campaignModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إنشاء حملة رسائل جماعية</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="campaignForm">
+                    <div class="mb-3">
+                        <label for="campaignName" class="form-label">اسم الحملة</label>
+                        <input type="text" class="form-control" id="campaignName" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="targetGroup" class="form-label">المجموعة المستهدفة</label>
+                        <select class="form-select" id="targetGroup" required>
+                            <option value="">-- اختر المجموعة --</option>
+                            <option value="all">جميع المستأجرين</option>
+                            <option value="active_contracts">العقود النشطة</option>
+                            <option value="expiring_contracts">العقود المنتهية قريباً</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="messageContent" class="form-label">محتوى الرسالة</label>
+                        <textarea class="form-control" id="messageContent" rows="6" required 
+                                  placeholder="اكتب محتوى الرسالة هنا...&#10;&#10;يمكنك استخدام {{name}} لإدراج اسم المستأجر"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>ملاحظة:</strong> سيتم إرسال الرسالة لجميع المستأجرين في المجموعة المحددة الذين لديهم أرقام هواتف صحيحة.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="createCampaign()">إنشاء الحملة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة تفاصيل الحملة -->
+<div class="modal fade" id="campaignDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل الحملة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="campaignDetailsContent">
+                    <!-- سيتم تحميل التفاصيل هنا -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCampaignModal() {
+    document.getElementById('campaignForm').reset();
+    const modal = new bootstrap.Modal(document.getElementById('campaignModal'));
+    modal.show();
+}
+
+function createCampaign() {
+    const campaignName = document.getElementById('campaignName').value;
+    const targetGroup = document.getElementById('targetGroup').value;
+    const messageContent = document.getElementById('messageContent').value;
+    
+    if (!campaignName || !targetGroup || !messageContent) {
+        alert('يرجى ملء جميع الحقول');
+        return;
+    }
+    
+    fetch('/create-bulk-message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            campaign_name: campaignName,
+            target_group: targetGroup,
+            message_content: messageContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('تم إنشاء الحملة بنجاح');
+            location.reload();
+        } else {
+            alert('فشل في إنشاء الحملة: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('حدث خطأ في إنشاء الحملة');
+    });
+}
+
+function sendCampaign(campaignId) {
+    if (confirm('هل أنت متأكد من إرسال هذه الحملة؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        // إظهار مؤشر التحميل
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>جاري الإرسال...';
+        button.disabled = true;
+        
+        fetch(`/send-bulk-message/${campaignId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم إرسال الحملة بنجاح');
+                location.reload();
+            } else {
+                alert('فشل في إرسال الحملة: ' + data.message);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ في إرسال الحملة');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+
+function viewCampaignDetails(campaignId) {
+    // هنا يمكن إضافة استدعاء API لجلب تفاصيل الحملة
+    document.getElementById('campaignDetailsContent').innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p>جاري تحميل التفاصيل...</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('campaignDetailsModal'));
+    modal.show();
+    
+    // محاكاة تحميل البيانات
+    setTimeout(() => {
+        document.getElementById('campaignDetailsContent').innerHTML = `
+            <div class="alert alert-info">
+                <strong>معلومات الحملة:</strong>
+                <p>تفاصيل الحملة رقم ${campaignId} ستظهر هنا</p>
+            </div>
+        `;
+    }, 1000);
+}
+</script>
+
+{% endblock %}

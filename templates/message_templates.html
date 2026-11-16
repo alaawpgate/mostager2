@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}قوالب الرسائل{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-file-invoice text-primary"></i>
+                            نماذج وقوالب الرسائل
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">إدارة القوالب النصية والمتغيرات الديناميكية لرسائل الواتساب</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button class="btn btn-primary d-none d-sm-inline-flex" onclick="showTemplateModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        <span>إضافة قالب جديد</span>
+                    </button>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            <!-- قوالب الرسائل -->
+            <div class="row">
+                {% for template in templates %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{{ template[1] }}</h6>
+                            <span class="badge bg-secondary">{{ message_types.get(template[2], template[2]) }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="template-preview" style="max-height: 150px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                                <pre style="white-space: pre-wrap; font-size: 0.9em;">{{ template[3] }}</pre>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editTemplate({{ template[0] }}, '{{ template[1] }}', '{{ template[2] }}', `{{ template[3]|replace('`', '\\`') }}`)">
+                                    <i class="fas fa-edit me-1"></i>
+                                    تعديل
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" onclick="previewTemplate(`{{ template[3]|replace('`', '\\`') }}`)">
+                                    <i class="fas fa-eye me-1"></i>
+                                    معاينة
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTemplate({{ template[0] }})">
+                                    <i class="fas fa-trash me-1"></i>
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-footer text-muted small">
+                            تم الإنشاء: {{ template[5] }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not templates %}
+            <div class="text-center mt-5">
+                <i class="fas fa-file-alt fa-5x text-muted mb-3"></i>
+                <h4>لا توجد قوالب رسائل</h4>
+                <p class="text-muted">ابدأ بإنشاء قالب رسالة جديد</p>
+                <button class="btn btn-primary" onclick="showTemplateModal()">
+                    <i class="fas fa-plus me-2"></i>
+                    إضافة قالب جديد
+                </button>
+            </div>
+            {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- نافذة إضافة/تعديل القالب -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templateModalTitle">إضافة قالب جديد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="templateForm">
+                    <input type="hidden" id="templateId">
+                    <div class="mb-3">
+                        <label for="templateName" class="form-label">اسم القالب</label>
+                        <input type="text" class="form-control" id="templateName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="templateType" class="form-label">نوع القالب</label>
+                        <select class="form-select" id="templateType" required>
+                            {% for key, value in message_types.items() %}
+                            <option value="{{ key }}">{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="templateContent" class="form-label">محتوى القالب</label>
+                        <textarea class="form-control" id="templateContent" rows="8" required 
+                                  placeholder="اكتب محتوى القالب هنا...&#10;&#10;يمكنك استخدام المتغيرات التالية:&#10;{{name}} - اسم المستأجر&#10;{{end_date}} - تاريخ انتهاء العقد&#10;{{amount}} - المبلغ&#10;{{date}} - التاريخ&#10;{{message_content}} - محتوى الرسالة المخصصة"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>نصائح:</strong>
+                        <ul class="mb-0">
+                            <li>استخدم <code>{{name}}</code> لإدراج اسم المستأجر</li>
+                            <li>استخدم <code>{{end_date}}</code> لإدراج تاريخ انتهاء العقد</li>
+                            <li>استخدم <code>{{amount}}</code> لإدراج المبلغ</li>
+                            <li>استخدم <code>{{date}}</code> لإدراج التاريخ</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="saveTemplate()">حفظ القالب</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة المعاينة -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">معاينة القالب</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>معاينة مع بيانات تجريبية:</strong>
+                </div>
+                <div id="previewContent" style="background: #f8f9fa; padding: 15px; border-radius: 5px; white-space: pre-wrap;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTemplateModal(isEdit = false) {
+    document.getElementById('templateModalTitle').textContent = isEdit ? 'تعديل القالب' : 'إضافة قالب جديد';
+    
+    if (!isEdit) {
+        document.getElementById('templateForm').reset();
+        document.getElementById('templateId').value = '';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+    modal.show();
+}
+
+function editTemplate(id, name, type, content) {
+    document.getElementById('templateId').value = id;
+    document.getElementById('templateName').value = name;
+    document.getElementById('templateType').value = type;
+    document.getElementById('templateContent').value = content;
+    
+    showTemplateModal(true);
+}
+
+function saveTemplate() {
+    const templateId = document.getElementById('templateId').value;
+    const templateName = document.getElementById('templateName').value;
+    const templateType = document.getElementById('templateType').value;
+    const templateContent = document.getElementById('templateContent').value;
+    
+    if (!templateName || !templateType || !templateContent) {
+        alert('يرجى ملء جميع الحقول');
+        return;
+    }
+    
+    const data = {
+        template_name: templateName,
+        template_type: templateType,
+        template_content: templateContent
+    };
+    
+    if (templateId) {
+        data.template_id = templateId;
+    }
+    
+    fetch('/save-template', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('تم حفظ القالب بنجاح');
+            location.reload();
+        } else {
+            alert('فشل في حفظ القالب: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('حدث خطأ في حفظ القالب');
+    });
+}
+
+function deleteTemplate(templateId) {
+    if (confirm('هل أنت متأكد من حذف هذا القالب؟')) {
+        fetch(`/delete-template/${templateId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم حذف القالب بنجاح');
+                location.reload();
+            } else {
+                alert('فشل في حذف القالب: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ في حذف القالب');
+        });
+    }
+}
+
+function previewTemplate(content) {
+    // استبدال المتغيرات ببيانات تجريبية
+    let previewContent = content
+        .replace(/\{\{name\}\}/g, 'أحمد محمد')
+        .replace(/\{\{end_date\}\}/g, '2024-12-31')
+        .replace(/\{\{amount\}\}/g, '5000 ريال')
+        .replace(/\{\{date\}\}/g, new Date().toLocaleDateString('ar-SA'))
+        .replace(/\{\{message_content\}\}/g, 'هذا محتوى الرسالة المخصصة');
+    
+    document.getElementById('previewContent').textContent = previewContent;
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+</script>
+
+{% endblock %}

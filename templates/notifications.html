@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}التنبيهات{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-bell text-primary"></i>
+                            سجل التنبيهات والإشعارات
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">استعراض كافة رسائل الواتساب المرسلة وتاريخ تسليمها</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-warning d-none d-sm-inline-flex" onclick="checkBalance()">
+                        <i class="fas fa-coins me-1"></i>فحص الرصيد
+                    </button>
+                    <a href="{{ url_for('send_notifications') }}" class="btn btn-success d-none d-sm-inline-flex">
+                        <i class="fab fa-whatsapp me-1"></i>إرسال التنبيهات
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            <!-- تحذير الرصيد -->
+            <div id="balance_warning" class="alert alert-warning alert-dismissible fade show d-none" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>تنبيه:</strong> تأكد من وجود رصيد كافٍ في حساب Whats360 قبل إرسال التنبيهات.
+                <a href="{{ url_for('settings') }}" class="alert-link">اذهب إلى الإعدادات لفحص الرصيد</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- نتيجة فحص الرصيد -->
+            <div id="balance_result" class="mb-3"></div>
+
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>اسم المستأجر</th>
+                            <th>نوع التنبيه</th>
+                            <th>حالة الإرسال</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log[5] }}</td>
+                            <td>{{ log[2] }}</td>
+                            <td>
+                                {% if log[3] == 'شهري' %}
+                                    <span class="badge bg-primary">{{ log[3] }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning">{{ log[3] }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log[4] == 'نجح' %}
+                                    <span class="badge bg-success">{{ log[4] }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ log[4] }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center">
+                <h4>لا يوجد تنبيهات</h4>
+                <p>لم يتم إرسال أي تنبيهات بعد.</p>
+                <a href="{{ url_for('send_notifications') }}" class="btn btn-success">
+                    <i class="fas fa-paper-plane me-2"></i>إرسال التنبيهات الآن
+                </a>
+            </div>
+            {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function checkBalance() {
+    const resultDiv = document.getElementById('balance_result');
+    resultDiv.innerHTML = '<div class="alert alert-info">جاري فحص الرصيد...</div>';
+    
+    fetch('/check-balance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const balance = data.balance || 0;
+            let alertClass = 'alert-success';
+            let icon = '💰';
+            
+            if (balance <= 0) {
+                alertClass = 'alert-danger';
+                icon = '❌';
+            } else if (balance < 10) {
+                alertClass = 'alert-warning';
+                icon = '⚠️';
+            }
+            
+            resultDiv.innerHTML = `<div class="alert ${alertClass}">
+                ${icon} ${data.message}
+                <br><small>الرصيد الحالي: ${balance} وحدة</small>
+            </div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}<br><small>التفاصيل: ${data.error || 'لا توجد تفاصيل'}</small></div>`;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">حدث خطأ في فحص الرصيد</div>';
+        console.error('Error:', error);
+    });
+}
+
+// فحص الرصيد تلقائياً عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // إظهار تحذير الرصيد
+    const warningDiv = document.getElementById('balance_warning');
+    warningDiv.classList.remove('d-none');
+});
+</script>
+
+{% endblock %}

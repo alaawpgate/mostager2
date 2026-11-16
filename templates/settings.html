@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}الإعدادات{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-sliders text-primary"></i>
+                            إعدادات النظام والواتساب
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">تكوين حساب Whats360، مواعيد الإشعارات وقوالب الرسائل</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary d-none d-sm-inline-flex">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>العودة للرئيسية</span>
+                    </a>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            {% if saved %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                تم حفظ الإعدادات بنجاح!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>إعدادات التوقيت</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="days_before_month_end" class="form-label">عدد الأيام قبل نهاية الشهر</label>
+                                    <input type="text" class="form-control" id="days_before_month_end" 
+                                           name="days_before_month_end" value="{{ settings[1] }}" placeholder="5,4,3,2,1">
+                                    <small class="form-text text-muted">أدخل الأيام مفصولة بفاصلة (مثال: 5,4,3,2,1)</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="days_before_contract_end" class="form-label">عدد الأيام قبل انتهاء العقد</label>
+                                    <input type="number" class="form-control" id="days_before_contract_end" 
+                                           name="days_before_contract_end" value="{{ settings[2] }}" min="1" max="365">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="send_hour" class="form-label">ساعة الإرسال</label>
+                                            <input type="number" class="form-control" id="send_hour" 
+                                                   name="send_hour" value="{{ settings[5] if settings[5] else 3 }}" min="1" max="12">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="send_minute" class="form-label">دقيقة الإرسال</label>
+                                            <input type="number" class="form-control" id="send_minute" 
+                                                   name="send_minute" value="{{ settings[6] if settings[6] else 30 }}" min="0" max="59">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="send_period" class="form-label">الفترة</label>
+                                            <select class="form-control" id="send_period" name="send_period">
+                                                <option value="صباحاً" {% if settings[7] == 'صباحاً' %}selected{% endif %}>صباحاً</option>
+                                                <option value="مساءً" {% if settings[7] == 'مساءً' or not settings[7] %}selected{% endif %}>مساءً</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>نصوص الرسائل</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="monthly_message" class="form-label">رسالة التنبيه الشهري</label>
+                                    <textarea class="form-control" id="monthly_message" name="monthly_message" rows="3">{{ settings[3] }}</textarea>
+                                    <small class="form-text text-muted">استخدم {{name}} لاسم المستأجر</small>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-info btn-sm" onclick="previewMessage('monthly')">معاينة الرسالة</button>
+                                        <button type="button" class="btn btn-success btn-sm ms-2" onclick="sendTestMessage('monthly')">إرسال الآن</button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="contract_end_message" class="form-label">رسالة انتهاء العقد</label>
+                                    <textarea class="form-control" id="contract_end_message" name="contract_end_message" rows="3">{{ settings[4] }}</textarea>
+                                    <small class="form-text text-muted">استخدم {{name}} لاسم المستأجر و {{end_date}} لتاريخ الانتهاء</small>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-info btn-sm" onclick="previewMessage('contract')">معاينة الرسالة</button>
+                                        <button type="button" class="btn btn-success btn-sm ms-2" onclick="sendTestMessage('contract')">إرسال الآن</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- إعدادات Whats360 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fab fa-whatsapp me-2"></i>إعدادات Whats360</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="whats360_client_id" class="form-label">Client ID</label>
+                                            <input type="text" class="form-control" id="whats360_client_id" 
+                                                   name="whats360_client_id" value="{{ whats360_client_id }}" 
+                                                   placeholder="YOUR_CLIENT_ID">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="whats360_api_key" class="form-label">API Key</label>
+                                            <input type="password" class="form-control" id="whats360_api_key" 
+                                                   name="whats360_api_key" value="{{ whats360_api_key }}" 
+                                                   placeholder="YOUR_API_KEY">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="test_phone" class="form-label">رقم الهاتف للاختبار</label>
+                                            <input type="text" class="form-control" id="test_phone" placeholder="01xxxxxxxxx">
+                                            <small class="form-text text-muted">أدخل رقم مصري للاختبار</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="test_name" class="form-label">الاسم للاختبار</label>
+                                            <input type="text" class="form-control" id="test_name" placeholder="اسم المستلم">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="message_type" class="form-label">نوع الرسالة</label>
+                                            <select class="form-control" id="message_type">
+                                                <option value="text">رسالة نصية</option>
+                                                <option value="welcome">رسالة ترحيب</option>
+                                                <option value="template">رسالة قالب</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row" id="template_section" style="display: none;">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="template_id" class="form-label">معرف القالب</label>
+                                            <input type="number" class="form-control" id="template_id" placeholder="1">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-secondary" onclick="testApiConnection()">
+                                        <i class="fas fa-wifi me-2"></i>اختبار الاتصال
+                                    </button>
+                                    <button type="button" class="btn btn-warning" onclick="checkBalance()">
+                                        <i class="fas fa-coins me-2"></i>فحص الرصيد
+                                    </button>
+                                    <button type="button" class="btn btn-danger" onclick="diagnoseWhats360()">
+                                        <i class="fas fa-stethoscope me-2"></i>تشخيص شامل
+                                    </button>
+                                    <button type="button" class="btn btn-info" onclick="testWhats360()">
+                                        <i class="fas fa-paper-plane me-2"></i>اختبار إرسال رسالة
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted d-block mt-2">اختبر الاتصال أولاً، ثم اختبر إرسال رسالة برقمك المصري</small>
+                                
+                                <!-- اختبار سريع للرقم المحدد -->
+                                <div class="mt-3 p-3 bg-light rounded">
+                                    <h6>🚀 اختبار سريع للرقم: 01009931190</h6>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="testSpecificNumber()">
+                                        <i class="fas fa-rocket me-2"></i>اختبار الرقم الآن
+                                    </button>
+                                    <small class="text-muted d-block mt-1">سيتم إرسال رسالة اختبار مع تشخيص مفصل</small>
+                                </div>
+                                
+                                <div id="test_result" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">حفظ الإعدادات</button>
+                </div>
+            </form>
+
+            <!-- قسم مسح البيانات -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5>مسح البيانات</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6>مسح المستأجرين والتقارير</h6>
+                                        <p class="text-muted">سيتم حذف جميع بيانات المستأجرين وسجل الإشعارات</p>
+                                        <button type="button" class="btn btn-warning" onclick="clearTenantsData()">
+                                            <i class="fas fa-trash me-2"></i>مسح المستأجرين والتقارير
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6>مسح جميع البيانات</h6>
+                                        <p class="text-muted">سيتم حذف جميع البيانات بما في ذلك الإعدادات</p>
+                                        <button type="button" class="btn btn-danger" onclick="clearAllData()">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>مسح جميع البيانات
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function previewMessage(type) {
+    fetch('/preview-message?type=' + type)
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        });
+}
+
+function sendTestMessage(type) {
+    if (confirm('هل تريد إرسال رسالة تجريبية؟')) {
+        fetch('/send-test-message?type=' + type, {method: 'POST'})
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            });
+    }
+}
+
+document.getElementById('message_type').addEventListener('change', function() {
+    const templateSection = document.getElementById('template_section');
+    if (this.value === 'template') {
+        templateSection.style.display = 'block';
+    } else {
+        templateSection.style.display = 'none';
+    }
+});
+
+function testApiConnection() {
+    const resultDiv = document.getElementById('test_result');
+    resultDiv.innerHTML = '<div class="alert alert-info">جاري اختبار الاتصال مع Whats360...</div>';
+    
+    fetch('/test-api-connection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success">${data.message}<br><small>كود الاستجابة: ${data.status_code}</small></div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}<br><small>التفاصيل: ${data.response || 'لا توجد تفاصيل'}</small></div>`;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">حدث خطأ في الاتصال</div>';
+        console.error('Error:', error);
+    });
+}
+
+function checkBalance() {
+    const resultDiv = document.getElementById('test_result');
+    resultDiv.innerHTML = '<div class="alert alert-info">جاري فحص الرصيد...</div>';
+    
+    fetch('/check-balance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const balance = data.balance || 0;
+            let alertClass = 'alert-success';
+            let icon = '💰';
+            
+            if (balance <= 0) {
+                alertClass = 'alert-danger';
+                icon = '❌';
+            } else if (balance < 10) {
+                alertClass = 'alert-warning';
+                icon = '⚠️';
+            }
+            
+            resultDiv.innerHTML = `<div class="alert ${alertClass}">
+                ${icon} ${data.message}
+                <br><small>تأكد من وجود رصيد كافٍ لإرسال الرسائل</small>
+            </div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}<br><small>التفاصيل: ${data.error || 'لا توجد تفاصيل'}</small></div>`;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">حدث خطأ في فحص الرصيد</div>';
+        console.error('Error:', error);
+    });
+}
+
+function diagnoseWhats360() {
+    const resultDiv = document.getElementById('test_result');
+    resultDiv.innerHTML = '<div class="alert alert-info">جاري التشخيص الشامل...</div>';
+    
+    fetch('/diagnose-whats360', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const diagnosis = data.diagnosis;
+            let html = '<div class="alert alert-info"><h5>🔍 نتائج التشخيص الشامل:</h5>';
+            
+            // فحص Client ID
+            html += `<p><strong>Client ID:</strong> ${diagnosis.client_id_valid ? '✅ صحيح' : '❌ غير صحيح'}</p>`;
+            
+            // فحص API Key
+            html += `<p><strong>API Key:</strong> ${diagnosis.api_key_valid ? '✅ صحيح' : '❌ غير صحيح'}</p>`;
+            
+            // فحص الاتصال
+            html += `<p><strong>الاتصال:</strong> ${diagnosis.connection_ok ? '✅ متصل' : '❌ غير متصل'}</p>`;
+            
+            // فحص الرصيد
+            html += `<p><strong>الرصيد:</strong> ${diagnosis.balance_available ? `✅ متاح (${diagnosis.balance_amount} وحدة)` : '❌ غير متاح'}</p>`;
+            
+            // الأخطاء
+            if (diagnosis.errors && diagnosis.errors.length > 0) {
+                html += '<hr><h6>الأخطاء المكتشفة:</h6><ul>';
+                diagnosis.errors.forEach(error => {
+                    html += `<li class="text-danger">${error}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.message}</div>`;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">حدث خطأ في التشخيص</div>';
+        console.error('Error:', error);
+    });
+}
+
+function testWhats360() {
+    const phone = document.getElementById('test_phone').value;
+    const name = document.getElementById('test_name').value;
+    const messageType = document.getElementById('message_type').value;
+    const templateId = document.getElementById('template_id').value;
+    const resultDiv = document.getElementById('test_result');
+    
+    if (messageType === 'template' && !templateId) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">يرجى إدخال معرف القالب</div>';
+        return;
+    }
+    
+    if (messageType === 'welcome' && !name) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">يرجى إدخال الاسم لرسالة الترحيب</div>';
+        return;
+    }
+    
+    resultDiv.innerHTML = '<div class="alert alert-info">جاري إرسال الرسالة...</div>';
+    
+    const data = {
+        phone: phone,
+        name: name,
+        message_type: messageType,
+        template_id: templateId
+    };
+    
+    fetch('/test-whats360', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">حدث خطأ في الاتصال</div>';
+        console.error('Error:', error);
+    });
+}
+
+function testSpecificNumber() {
+    const resultDiv = document.getElementById('test_result');
+    resultDiv.innerHTML = '<div class="alert alert-info">جاري اختبار الرقم 01009931190...</div>';
+    
+    const data = {
+        phone: '01009931190',
+        name: 'صاحب النظام'
+    };
+    
+    fetch('/test-specific-number', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        let html = '';
+        
+        if (data.success) {
+            html = `<div class="alert alert-success">
+                <h5>✅ نجح الإرسال!</h5>
+                <p><strong>الرقم الأصلي:</strong> ${data.phone_original}</p>
+                <p><strong>الرقم بعد التنظيف:</strong> ${data.phone_cleaned}</p>
+                <p><strong>الرسالة:</strong> ${data.message}</p>
+            </div>`;
+        } else {
+            html = `<div class="alert alert-danger">
+                <h5>❌ فشل الإرسال</h5>
+                <p><strong>الرقم الأصلي:</strong> ${data.phone_original}</p>
+                <p><strong>الرقم بعد التنظيف:</strong> ${data.phone_cleaned}</p>
+                <p><strong>الخطأ:</strong> ${data.message}</p>`;
+            
+            // إضافة تفاصيل الأخطاء
+            if (data.details && data.details.length > 0) {
+                html += '<hr><h6>تفاصيل الأخطاء:</h6><ul>';
+                data.details.forEach(detail => {
+                    html += `<li>${detail}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            // إضافة نتائج التشخيص
+            if (data.diagnosis && Object.keys(data.diagnosis).length > 0) {
+                html += '<hr><h6>نتائج التشخيص:</h6>';
+                const diagnosis = data.diagnosis;
+                html += `<p>Client ID: ${diagnosis.client_id_valid ? '✅' : '❌'}</p>`;
+                html += `<p>API Key: ${diagnosis.api_key_valid ? '✅' : '❌'}</p>`;
+                html += `<p>الاتصال: ${diagnosis.connection_ok ? '✅' : '❌'}</p>`;
+                html += `<p>الرصيد: ${diagnosis.balance_available ? `✅ (${diagnosis.balance_amount})` : '❌'}</p>`;
+                
+                if (diagnosis.errors && diagnosis.errors.length > 0) {
+                    html += '<p><strong>الأخطاء:</strong></p><ul>';
+                    diagnosis.errors.forEach(error => {
+                        html += `<li class="text-danger">${error}</li>`;
+                    });
+                    html += '</ul>';
+                }
+            }
+            
+            html += '</div>';
+        }
+        
+        resultDiv.innerHTML = html;
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">حدث خطأ في الاتصال</div>';
+        console.error('Error:', error);
+    });
+}
+
+function clearTenantsData() {
+    if (confirm('هل أنت متأكد من حذف جميع بيانات المستأجرين والتقارير؟ هذا الإجراء لا يمكن التراجع عنه!')) {
+        fetch('/clear-tenants-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم حذف بيانات المستأجرين والتقارير بنجاح');
+                location.reload();
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('حدث خطأ في الاتصال');
+        });
+    }
+}
+
+function clearAllData() {
+    if (confirm('هل أنت متأكد من حذف جميع البيانات؟ سيتم حذف كل شيء بما في ذلك الإعدادات! هذا الإجراء لا يمكن التراجع عنه!')) {
+        if (confirm('تأكيد أخير: سيتم حذف جميع البيانات نهائياً!')) {
+            fetch('/clear-all-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم حذف جميع البيانات بنجاح');
+                    location.reload();
+                } else {
+                    alert('حدث خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('حدث خطأ في الاتصال');
+            });
+        }
+    }
+}
+
+</script>
+{% endblock %}

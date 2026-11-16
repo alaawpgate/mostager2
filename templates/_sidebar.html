@@ -1,0 +1,120 @@
+<!-- Shared Modern Sidebar Component -->
+<nav class="col-lg-2 sidebar flex-column" id="sidebarMenu">
+    <!-- Brand Header -->
+    <div class="sidebar-brand d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <div class="sidebar-brand-icon p-1" style="overflow: hidden; border-radius: 12px; background: #09132b;">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Mostager Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+            </div>
+            <div class="sidebar-brand-text">
+                <h4>مُستأجِر</h4>
+                <span>إدارة العقارات والعقود</span>
+            </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-light border-0 d-lg-none p-1" onclick="toggleSidebarMenu(true)"
+            title="إغلاق القائمة">
+            <i class="fas fa-xmark fs-5"></i>
+        </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="p-2">
+        <div class="sidebar-section-title">القائمة الرئيسية</div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                    href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>الرئيسية</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'view_tenants' or request.endpoint == 'view_tenant' %}active{% endif %}"
+                    href="{{ url_for('view_tenants') }}">
+                    <i class="fas fa-users"></i>
+                    <span>سجل المستأجرين</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'add_tenant' or request.endpoint == 'add_tenant_contract' %}active{% endif %}"
+                    href="{{ url_for('add_tenant') }}">
+                    <i class="fas fa-user-plus"></i>
+                    <span>إضافة مستأجر جديد</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-section-title mt-3">خدمات الواتساب والتواصل</div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'message_center' or request.endpoint == 'bulk_messages' %}active{% endif %}"
+                    href="{{ url_for('message_center') }}">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>مركز الرسائل</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'notifications' %}active{% endif %}"
+                    href="{{ url_for('notifications') }}">
+                    <i class="fas fa-bell"></i>
+                    <span>سجل التنبيهات</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'scheduled_messages' %}active{% endif %}"
+                    href="{{ url_for('scheduled_messages') }}">
+                    <i class="fas fa-clock"></i>
+                    <span>الرسائل المجدولة</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-section-title mt-3">التقارير والإعدادات</div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}"
+                    href="{{ url_for('reports') }}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>التقارير والإحصائيات</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}"
+                    href="{{ url_for('profile') }}">
+                    <i class="fas fa-user-gear"></i>
+                    <span>الملف الشخصي</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}"
+                    href="{{ url_for('settings') }}">
+                    <i class="fas fa-sliders"></i>
+                    <span>إعدادات النظام</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- User Info at Bottom -->
+    <div class="mt-auto">
+        <div class="sidebar-user d-flex align-items-center justify-content-between">
+            <a href="{{ url_for('profile') }}"
+                class="d-flex align-items-center gap-2 text-decoration-none overflow-hidden" title="عرض الملف الشخصي">
+                <div class="sidebar-user-avatar">
+                    {% if current_admin and current_admin.avatar and current_admin.avatar != 'avatar.png' %}
+                        <img src="{{ url_for('static', filename='uploads/' + current_admin.avatar) }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.onerror=null; this.src='/static/avatar.png';">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='avatar.png') }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <div class="sidebar-user-info">
+                    <p class="sidebar-user-name">{{ current_admin.full_name if current_admin else 'مدير النظام' }}</p>
+                    <p class="sidebar-user-role">مشرف العقارات</p>
+                </div>
+            </a>
+            <a href="{{ url_for('logout') }}" class="sidebar-logout-btn" title="تسجيل الخروج">
+                <i class="fas fa-arrow-right-from-bracket"></i>
+            </a>
+        </div>
+    </div>
+</nav>

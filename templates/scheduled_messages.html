@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}الرسائل المجدولة{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Modern Sidebar -->
+        {% include '_sidebar.html' %}
+
+        <main class="col-lg-10 ms-sm-auto main-content">
+            <div class="app-topbar">
+                <div class="topbar-title-group">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-secondary d-lg-none me-2" type="button" onclick="toggleSidebarMenu()">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2>
+                            <i class="fas fa-clock text-primary"></i>
+                            الرسائل والتنبيهات المجدولة
+                        </h2>
+                    </div>
+                    <p class="topbar-subtitle">جدولة إشعارات الاستحقاق ورسائل التذكير الآلية</p>
+                </div>
+                <div class="topbar-actions d-flex align-items-center gap-2">
+                    <button class="btn btn-success d-none d-md-inline-flex" onclick="processScheduledMessages()">
+                        <i class="fas fa-play me-1"></i>
+                        <span>معالجة الرسائل المستحقة</span>
+                    </button>
+                    <button class="btn btn-primary d-none d-sm-inline-flex" onclick="showScheduleModal()">
+                        <i class="fas fa-plus me-1"></i>
+                        <span>جدولة رسالة</span>
+                    </button>
+                    {% include '_header_actions.html' %}
+                </div>
+            </div>
+
+            <div class="content-wrapper">
+
+            <!-- تبويبات -->
+            <ul class="nav nav-tabs mb-4" id="messagesTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                        <i class="fas fa-clock me-2"></i>
+                        في الانتظار ({{ pending_messages|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sent-tab" data-bs-toggle="tab" data-bs-target="#sent" type="button" role="tab">
+                        <i class="fas fa-check me-2"></i>
+                        تم الإرسال ({{ sent_messages|length }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="failed-tab" data-bs-toggle="tab" data-bs-target="#failed" type="button" role="tab">
+                        <i class="fas fa-times me-2"></i>
+                        فشل ({{ failed_messages|length }})
+                    </button>
+                </li>
+            </ul>
+
+            <!-- محتوى التبويبات -->
+            <div class="tab-content" id="messagesTabsContent">
+                <!-- الرسائل في الانتظار -->
+                <div class="tab-pane fade show active" id="pending" role="tabpanel">
+                    {% if pending_messages %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>المستأجر</th>
+                                    <th>نوع الرسالة</th>
+                                    <th>التاريخ المجدول</th>
+                                    <th>الوقت المجدول</th>
+                                    <th>محتوى الرسالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for message in pending_messages %}
+                                <tr>
+                                    <td>{{ message[10] or 'غير محدد' }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ message[3] }}</span>
+                                    </td>
+                                    <td>{{ message[5] }}</td>
+                                    <td>{{ message[6] }}</td>
+                                    <td>
+                                        <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ message[4][:50] }}{% if message[4]|length > 50 %}...{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewMessage(`{{ message[4]|replace('`', '\\`') }}`)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="cancelScheduledMessage({{ message[0] }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center mt-4">
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <h5>لا توجد رسائل مجدولة في الانتظار</h5>
+                        <p class="text-muted">جدول رسالة جديدة للإرسال لاحقاً</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- الرسائل المرسلة -->
+                <div class="tab-pane fade" id="sent" role="tabpanel">
+                    {% if sent_messages %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>المستأجر</th>
+                                    <th>نوع الرسالة</th>
+                                    <th>تاريخ الإرسال</th>
+                                    <th>محتوى الرسالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for message in sent_messages %}
+                                <tr>
+                                    <td>{{ message[10] or 'غير محدد' }}</td>
+                                    <td>
+                                        <span class="badge bg-success">{{ message[3] }}</span>
+                                    </td>
+                                    <td>{{ message[9] }}</td>
+                                    <td>
+                                        <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ message[4][:50] }}{% if message[4]|length > 50 %}...{% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center mt-4">
+                        <i class="fas fa-check fa-3x text-success mb-3"></i>
+                        <h5>لا توجد رسائل مرسلة</h5>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- الرسائل الفاشلة -->
+                <div class="tab-pane fade" id="failed" role="tabpanel">
+                    {% if failed_messages %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>المستأجر</th>
+                                    <th>نوع الرسالة</th>
+                                    <th>تاريخ المحاولة</th>
+                                    <th>محتوى الرسالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for message in failed_messages %}
+                                <tr>
+                                    <td>{{ message[10] or 'غير محدد' }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ message[3] }}</span>
+                                    </td>
+                                    <td>{{ message[9] }}</td>
+                                    <td>
+                                        <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ message[4][:50] }}{% if message[4]|length > 50 %}...{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-warning" onclick="retryMessage({{ message[0] }})">
+                                            <i class="fas fa-redo"></i>
+                                            إعادة المحاولة
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center mt-4">
+                        <i class="fas fa-times fa-3x text-danger mb-3"></i>
+                        <h5>لا توجد رسائل فاشلة</h5>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- نافذة جدولة رسالة جديدة -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">جدولة رسالة جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="mb-3">
+                        <label for="tenantSelect" class="form-label">اختر المستأجر</label>
+                        <select class="form-select" id="tenantSelect" required>
+                            <option value="">-- اختر المستأجر --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="messageType" class="form-label">نوع الرسالة</label>
+                        <input type="text" class="form-control" id="messageType" value="مجدولة" readonly>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduledDate" class="form-label">التاريخ</label>
+                                <input type="date" class="form-control" id="scheduledDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="scheduledTime" class="form-label">الوقت</label>
+                                <input type="time" class="form-control" id="scheduledTime" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="messageContent" class="form-label">محتوى الرسالة</label>
+                        <textarea class="form-control" id="messageContent" rows="5" required 
+                                  placeholder="اكتب محتوى الرسالة هنا...&#10;&#10;يمكنك استخدام {{name}} لإدراج اسم المستأجر"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>ملاحظة:</strong> سيتم إرسال الرسالة تلقائياً في التاريخ والوقت المحددين.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="scheduleMessage()">جدولة الرسالة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة عرض الرسالة -->
+<div class="modal fade" id="viewMessageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">محتوى الرسالة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="messageContent" style="background: #f8f9fa; padding: 15px; border-radius: 5px; white-space: pre-wrap;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showScheduleModal() {
+    // تحميل قائمة المستأجرين
+    fetch('/api/tenants')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('tenantSelect');
+            select.innerHTML = '<option value="">-- اختر المستأجر --</option>';
+            
+            data.forEach(tenant => {
+                if (tenant.tenant_phone) {
+                    const option = document.createElement('option');
+                    option.value = tenant.id;
+                    option.textContent = tenant.tenant_name;
+                    select.appendChild(option);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading tenants:', error);
+        });
+    
+    // تعيين التاريخ الافتراضي (غداً)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('scheduledDate').value = tomorrow.toISOString().split('T')[0];
+    
+    // تعيين الوقت الافتراضي
+    document.getElementById('scheduledTime').value = '09:00';
+    
+    const modal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+    modal.show();
+}
+
+function scheduleMessage() {
+    const tenantId = document.getElementById('tenantSelect').value;
+    const messageType = document.getElementById('messageType').value;
+    const scheduledDate = document.getElementById('scheduledDate').value;
+    const scheduledTime = document.getElementById('scheduledTime').value;
+    const messageContent = document.getElementById('messageContent').value;
+    
+    if (!tenantId || !scheduledDate || !scheduledTime || !messageContent) {
+        alert('يرجى ملء جميع الحقول');
+        return;
+    }
+    
+    fetch('/schedule-message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            tenant_id: tenantId,
+            message_type: messageType,
+            scheduled_date: scheduledDate,
+            scheduled_time: scheduledTime,
+            message_content: messageContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('تم جدولة الرسالة بنجاح');
+            location.reload();
+        } else {
+            alert('فشل في جدولة الرسالة: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('حدث خطأ في جدولة الرسالة');
+    });
+}
+
+function processScheduledMessages() {
+    if (confirm('هل تريد معالجة جميع الرسائل المجدولة المستحقة للإرسال؟')) {
+        fetch('/process-scheduled-messages', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم معالجة الرسائل المجدولة بنجاح');
+                location.reload();
+            } else {
+                alert('فشل في معالجة الرسائل: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('حدث خطأ في معالجة الرسائل');
+        });
+    }
+}
+
+function viewMessage(content) {
+    document.getElementById('messageContent').textContent = content;
+    const modal = new bootstrap.Modal(document.getElementById('viewMessageModal'));
+    modal.show();
+}
+
+function cancelScheduledMessage(messageId) {
+    if (confirm('هل أنت متأكد من إلغاء هذه الرسالة المجدولة؟')) {
+        // هنا يمكن إضافة API لإلغاء الرسالة المجدولة
+        alert('سيتم إضافة هذه الوظيفة قريباً');
+    }
+}
+
+function retryMessage(messageId) {
+    if (confirm('هل تريد إعادة محاولة إرسال هذه الرسالة؟')) {
+        // هنا يمكن إضافة API لإعادة المحاولة
+        alert('سيتم إضافة هذه الوظيفة قريباً');
+    }
+}
+</script>
+
+{% endblock %}
