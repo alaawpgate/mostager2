@@ -438,10 +438,10 @@ h1, h2, h3, h4, h5, h6, .page-title, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-size: 0.9rem !important;
   padding: 0.55rem 1.15rem !important;
   border-radius: var(--radius-md) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.5rem !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   transition: all var(--transition-fast) !important;
   border: 1px solid transparent !important;
 }
@@ -449,6 +449,14 @@ h1, h2, h3, h4, h5, h6, .page-title, .h1, .h2, .h3, .h4, .h5, .h6 {
 .btn:active {
   transform: scale(0.98);
 }
+
+/* Enforce Bootstrap display utilities over buttons & flex items */
+.d-none { display: none !important; }
+@media (min-width: 576px) { .d-sm-none { display: none !important; } }
+@media (min-width: 768px) { .d-md-none { display: none !important; } }
+@media (min-width: 992px) { .d-lg-none { display: none !important; } }
+@media (min-width: 1200px) { .d-xl-none { display: none !important; } }
+@media (min-width: 1400px) { .d-xxl-none { display: none !important; } }
 
 .btn-primary {
   background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
@@ -1133,20 +1141,38 @@ footer.app-footer a:hover {
     padding: 0.75rem 1rem !important;
   }
 
-  /* Closed mobile sidebar: completely removed from layout flow via fixed positioning */
+  /* Hamburger Toggle Button - visible on mobile */
+  .sidebar-toggle-btn,
+  button[onclick*="toggleSidebarMenu"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Close Button in Sidebar Brand - visible on mobile */
+  .sidebar-close-btn,
+  #sidebarCloseBtn,
+  button[onclick*="toggleSidebarMenu(true)"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Closed mobile sidebar: completely removed from layout flow via fixed positioning and shifted offscreen to the right */
   .sidebar, nav.sidebar, #sidebarMenu {
     position: fixed !important;
     top: 0 !important;
-    right: 0 !important;
+    right: -330px !important;
+    left: auto !important;
     bottom: 0 !important;
     width: 290px !important;
     max-width: 85vw !important;
     height: 100vh !important;
     height: 100dvh !important;
     z-index: 1080 !important;
-    transform: translateX(110%) !important;
-    -webkit-transform: translateX(110%) !important;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+    transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s ease !important;
     visibility: hidden !important;
     pointer-events: none !important;
     display: flex !important;
@@ -1158,13 +1184,15 @@ footer.app-footer a:hover {
     border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 
-  /* Open mobile sidebar: slides in smoothly from the right */
+  /* Open mobile sidebar: slides in smoothly from the right (right: 0) */
   .sidebar.show-mobile, nav.sidebar.show-mobile, #sidebarMenu.show-mobile {
-    transform: translateX(0) !important;
-    -webkit-transform: translateX(0) !important;
+    right: 0 !important;
+    left: auto !important;
+    transform: none !important;
+    -webkit-transform: none !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    box-shadow: -10px 0 45px rgba(0, 0, 0, 0.65) !important;
+    box-shadow: -10px 0 45px rgba(0, 0, 0, 0.75) !important;
   }
 
   /* Dark Blurred Backdrop */
@@ -1176,7 +1204,7 @@ footer.app-footer a:hover {
     bottom: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: rgba(15, 23, 42, 0.7) !important;
+    background: rgba(15, 23, 42, 0.75) !important;
     backdrop-filter: blur(4px) !important;
     -webkit-backdrop-filter: blur(4px) !important;
     z-index: 1070 !important;
@@ -1184,9 +1212,11 @@ footer.app-footer a:hover {
     visibility: hidden !important;
     pointer-events: none !important;
     transition: opacity 0.25s ease, visibility 0.25s ease !important;
+    display: none;
   }
 
   .sidebar-backdrop.show {
+    display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
@@ -1206,10 +1236,14 @@ footer.app-footer a:hover {
   }
 }
 
-/* Desktop Mode (>= 992px: Laptops, Desktops) */
+/* Desktop Mode (>= 992px: Laptops, Desktops, Landscape Tablets) */
 @media (min-width: 992px) {
-  .sidebar, nav.sidebar {
+  .sidebar, nav.sidebar, #sidebarMenu {
     position: static !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    bottom: auto !important;
     transform: none !important;
     -webkit-transform: none !important;
     visibility: visible !important;
@@ -1217,7 +1251,27 @@ footer.app-footer a:hover {
     display: flex !important;
     flex-direction: column !important;
     min-height: 100vh !important;
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    flex: 0 0 260px !important;
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12) !important;
+  }
+
+  .main-content, main.main-content {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: calc(100% - 260px) !important;
+    max-width: calc(100% - 260px) !important;
+  }
+
+  /* Strictly hide all mobile menu toggle and close buttons on desktop */
+  .sidebar-toggle-btn,
+  .sidebar-close-btn,
+  #sidebarCloseBtn,
+  button[onclick*="toggleSidebarMenu"],
+  .d-lg-none {
+    display: none !important;
   }
 
   .sidebar-backdrop {
