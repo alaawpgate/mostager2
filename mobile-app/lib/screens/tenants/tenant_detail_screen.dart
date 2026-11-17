@@ -368,7 +368,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
                         alignment: Alignment.center,
                         child: (t.hasIdImage && t.idImage != null && t.idImage!.isNotEmpty)
                             ? Image.network(
-                                '${ApiEndpoints.uploadsBase}/${t.idImage}',
+                                ApiEndpoints.resolveUploadUrl(t.idImage, customBaseUrl: ApiService.baseUrl),
                                 fit: BoxFit.cover,
                                 width: 56,
                                 height: 56,
@@ -671,7 +671,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
       itemCount: t.checkImagesList.length,
       itemBuilder: (ctx, index) {
         final img = t.checkImagesList[index];
-        final url = '${ApiEndpoints.uploadsBase}/$img';
+        final url = ApiEndpoints.resolveUploadUrl(img, customBaseUrl: ApiService.baseUrl);
         return Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -1180,7 +1180,7 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
     required IconData icon,
   }) {
     final hasImg = imageFileName != null && imageFileName.isNotEmpty;
-    final imageUrl = hasImg ? '${ApiEndpoints.uploadsBase}/$imageFileName' : '';
+    final imageUrl = hasImg ? ApiEndpoints.resolveUploadUrl(imageFileName, customBaseUrl: ApiService.baseUrl) : '';
 
     return Card(
       elevation: 0,

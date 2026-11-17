@@ -871,7 +871,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       alignment: Alignment.center,
                       child: (tenant.hasIdImage && tenant.idImage != null && tenant.idImage!.isNotEmpty)
                           ? Image.network(
-                              '${ApiEndpoints.uploadsBase}/${tenant.idImage}',
+                              ApiEndpoints.resolveUploadUrl(tenant.idImage, customBaseUrl: ApiService.baseUrl),
                               fit: BoxFit.cover,
                               width: 44,
                               height: 44,

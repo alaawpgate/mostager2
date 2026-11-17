@@ -64,6 +64,12 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
   File? _licenseImageFile;
   final List<File> _checkImageFiles = [];
 
+  // Deletion tracking flags
+  bool _deleteIdImage = false;
+  bool _deleteContractImage = false;
+  bool _deleteLicenseImage = false;
+  final List<String> _removedExistingChecks = [];
+
   bool _isSaving = false;
 
   final List<String> _unitUsages = [
@@ -319,6 +325,15 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
       'commercial_license_number': _licenseNumberController.text.trim(),
       'notes': _notesController.text.trim(),
     };
+
+    if (widget.isEditing) {
+      if (_deleteIdImage && _idImageFile == null) fields['delete_id_image'] = 'true';
+      if (_deleteContractImage && _contractImageFile == null) fields['delete_contract_image'] = 'true';
+      if (_deleteLicenseImage && _licenseImageFile == null) fields['delete_commercial_license_image'] = 'true';
+      if (_removedExistingChecks.isNotEmpty) {
+        fields['deleted_check_images'] = _removedExistingChecks.join(',');
+      }
+    }
 
     final ApiResponse<dynamic> res;
     final endpoint = widget.isEditing
@@ -848,9 +863,15 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
   // TAB 4: تفاصيل العقد الإضافية (Exact match for http://127.0.0.1:8080/add-tenant)
   Widget _buildAdditionalDetailsTab() {
     final t = widget.tenant;
-    final existingIdUrl = t?.idImage != null ? ApiEndpoints.resolveUploadUrl(t!.idImage, customBaseUrl: ApiService.baseUrl) : null;
-    final existingContractUrl = t?.contractImage != null ? ApiEndpoints.resolveUploadUrl(t!.contractImage, customBaseUrl: ApiService.baseUrl) : null;
-    final existingLicenseUrl = t?.commercialLicenseImage != null ? ApiEndpoints.resolveUploadUrl(t!.commercialLicenseImage, customBaseUrl: ApiService.baseUrl) : null;
+    final existingIdUrl = (!_deleteIdImage && t?.idImage != null)
+        ? ApiEndpoints.resolveUploadUrl(t!.idImage, customBaseUrl: ApiService.baseUrl)
+        : null;
+    final existingContractUrl = (!_deleteContractImage && t?.contractImage != null)
+        ? ApiEndpoints.resolveUploadUrl(t!.contractImage, customBaseUrl: ApiService.baseUrl)
+        : null;
+    final existingLicenseUrl = (!_deleteLicenseImage && t?.commercialLicenseImage != null)
+        ? ApiEndpoints.resolveUploadUrl(t!.commercialLicenseImage, customBaseUrl: ApiService.baseUrl)
+        : null;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -912,10 +933,18 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
             existingRemoteUrl: existingLicenseUrl,
             onPick: () async {
               final img = await _pickImage(context);
-              if (img != null) setState(() => _licenseImageFile = img);
+              if (img != null) {
+                setState(() {
+                  _licenseImageFile = img;
+                  _deleteLicenseImage = false;
+                });
+              }
             },
             onRemove: () {
-              setState(() => _licenseImageFile = null);
+              setState(() {
+                _licenseImageFile = null;
+                _deleteLicenseImage = true;
+              });
             },
           ),
 
@@ -966,10 +995,18 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
             existingRemoteUrl: existingIdUrl,
             onPick: () async {
               final img = await _pickImage(context);
-              if (img != null) setState(() => _idImageFile = img);
+              if (img != null) {
+                setState(() {
+                  _idImageFile = img;
+                  _deleteIdImage = false;
+                });
+              }
             },
             onRemove: () {
-              setState(() => _idImageFile = null);
+              setState(() {
+                _idImageFile = null;
+                _deleteIdImage = true;
+              });
             },
           ),
 
@@ -980,10 +1017,18 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
             existingRemoteUrl: existingContractUrl,
             onPick: () async {
               final img = await _pickImage(context);
-              if (img != null) setState(() => _contractImageFile = img);
+              if (img != null) {
+                setState(() {
+                  _contractImageFile = img;
+                  _deleteContractImage = false;
+                });
+              }
             },
             onRemove: () {
-              setState(() => _contractImageFile = null);
+              setState(() {
+                _contractImageFile = null;
+                _deleteContractImage = true;
+              });
             },
           ),
         ],
@@ -1081,7 +1126,9 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
   }
 
   Widget _buildCheckImagesSection() {
-    final existingRemoteChecks = widget.tenant?.checkImagesList ?? [];
+    final existingRemoteChecks = (widget.tenant?.checkImagesList ?? [])
+        .where((c) => !_removedExistingChecks.contains(c))
+        .toList();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -1131,20 +1178,44 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
               runSpacing: 8,
               children: existingRemoteChecks.map((filename) {
                 final url = ApiEndpoints.resolveUploadUrl(filename, customBaseUrl: ApiService.baseUrl);
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    url,
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
-                      width: 70,
-                      height: 70,
-                      color: AppColors.background,
-                      child: const Icon(Icons.broken_image, size: 20),
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        url,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          width: 70,
+                          height: 70,
+                          color: AppColors.background,
+                          child: const Icon(Icons.broken_image, size: 20),
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      top: -6,
+                      left: -6,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _removedExistingChecks.add(filename);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: AppColors.danger,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               }).toList(),
             ),

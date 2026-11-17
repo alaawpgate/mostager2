@@ -3255,10 +3255,26 @@ class AdminApp:
                 
                 upload_folder = self.app.config.get('UPLOAD_FOLDER', 'static/uploads')
                 os.makedirs(upload_folder, exist_ok=True)
-                id_image = current[7]
-                contract_image = current[8]
+                id_image = current[9] if len(current) > 9 else None
+                contract_image = current[10] if len(current) > 10 else None
                 commercial_license_image = current[18] if len(current) > 18 else None
-                check_images_str = current[13]
+                check_images_str = current[13] if len(current) > 13 else ''
+                
+                # Handle explicit deletion flags
+                if data.get('delete_id_image') in ['true', '1', True]:
+                    id_image = None
+                if data.get('delete_contract_image') in ['true', '1', True]:
+                    contract_image = None
+                if data.get('delete_commercial_license_image') in ['true', '1', True]:
+                    commercial_license_image = None
+                if data.get('deleted_check_images'):
+                    deleted_list = [d.strip() for d in str(data.get('deleted_check_images')).split(',') if d.strip()]
+                    if check_images_str:
+                        current_checks = [c.strip() for c in check_images_str.split(',') if c.strip()]
+                        remaining_checks = [c for c in current_checks if c not in deleted_list]
+                        check_images_str = ','.join(remaining_checks) if remaining_checks else None
+                if data.get('delete_all_checks') in ['true', '1', True]:
+                    check_images_str = None
                 
                 if 'id_image' in request.files:
                     f = request.files['id_image']

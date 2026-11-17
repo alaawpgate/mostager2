@@ -84,9 +84,9 @@ class _TenantsScreenState extends State<TenantsScreen> {
     if (_selectedFilter == 'الكل') {
       _filteredTenants = List.from(_allTenants);
     } else if (_selectedFilter == 'سكني') {
-      _filteredTenants = _allTenants.where((t) => t.contractType.contains('سكني')).toList();
+      _filteredTenants = _allTenants.where((t) => t.isResidential).toList();
     } else if (_selectedFilter == 'تجاري') {
-      _filteredTenants = _allTenants.where((t) => t.contractType.contains('تجاري')).toList();
+      _filteredTenants = _allTenants.where((t) => t.isCommercial).toList();
     } else if (_selectedFilter == 'منتهي') {
       _filteredTenants = _allTenants.where((t) => t.isExpired).toList();
     }
@@ -223,6 +223,7 @@ class _TenantsScreenState extends State<TenantsScreen> {
       return Scaffold(
         body: content,
         floatingActionButton: _buildFab(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       );
     }
 
@@ -239,27 +240,64 @@ class _TenantsScreenState extends State<TenantsScreen> {
       ),
       body: content,
       floatingActionButton: _buildFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
+  Future<void> _navigateToAddTenant() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const AddEditTenantScreen()),
+    );
+    if (result == true) {
+      _fetchTenants(search: _searchController.text);
+    }
+  }
+
   Widget _buildFab() {
-    return FloatingActionButton.extended(
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.person_add_alt_1_rounded),
-      label: const Text(
-        'إضافة مستأجر',
-        style: TextStyle(fontWeight: FontWeight.bold),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F766E), Color(0xFF134E4A)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F766E).withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      onPressed: () async {
-        final result = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(builder: (_) => const AddEditTenantScreen()),
-        );
-        if (result == true) {
-          _fetchTenants(search: _searchController.text);
-        }
-      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _navigateToAddTenant,
+          borderRadius: BorderRadius.circular(30),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'إضافة مستأجر جديد',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -269,30 +307,78 @@ class _TenantsScreenState extends State<TenantsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         children: [
-          // Search Input Field
-          TextField(
-            controller: _searchController,
-            onChanged: _onSearchChanged,
-            decoration: InputDecoration(
-              hintText: 'ابحث بالاسم أو رقم الهاتف...',
-              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 20),
-                      onPressed: () {
-                        _searchController.clear();
-                        _fetchTenants();
-                      },
-                    )
-                  : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+          // Search & Quick Add Button
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'ابحث بالاسم أو رقم الهاتف...',
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 20),
+                            onPressed: () {
+                              _searchController.clear();
+                              _fetchTenants();
+                            },
+                          )
+                        : null,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _navigateToAddTenant,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                        begin: Alignment.topRight,
+                        end: Alignment.bottomLeft,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 4),
+                        Text(
+                          'إضافة',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           // Filter Chips
@@ -304,12 +390,12 @@ class _TenantsScreenState extends State<TenantsScreen> {
                 const SizedBox(width: 8),
                 _buildFilterChip(
                   'سكني',
-                  _allTenants.where((t) => t.contractType.contains('سكني')).length,
+                  _allTenants.where((t) => t.isResidential).length,
                 ),
                 const SizedBox(width: 8),
                 _buildFilterChip(
                   'تجاري',
-                  _allTenants.where((t) => t.contractType.contains('تجاري')).length,
+                  _allTenants.where((t) => t.isCommercial).length,
                 ),
                 const SizedBox(width: 8),
                 _buildFilterChip(
@@ -406,7 +492,7 @@ class _TenantsScreenState extends State<TenantsScreen> {
                     alignment: Alignment.center,
                     child: (tenant.hasIdImage && tenant.idImage != null && tenant.idImage!.isNotEmpty)
                         ? Image.network(
-                            '${ApiEndpoints.uploadsBase}/${tenant.idImage}',
+                            ApiEndpoints.resolveUploadUrl(tenant.idImage, customBaseUrl: ApiService.baseUrl),
                             fit: BoxFit.cover,
                             width: 44,
                             height: 44,

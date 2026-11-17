@@ -282,4 +282,29 @@ class TenantModel {
     if (rentAmount == null) return 'غير محدد';
     return '${rentAmount!.toStringAsFixed(0)} درهم';
   }
+
+  bool get isResidential {
+    final usage = (unitUsage ?? '').toLowerCase();
+    final cType = contractType.toLowerCase();
+    return usage.contains('سكن') ||
+        usage.contains('residence') ||
+        usage.contains('family') ||
+        cType.contains('سكن') ||
+        cType.contains('residen');
+  }
+
+  bool get isCommercial {
+    final usage = (unitUsage ?? '').toLowerCase();
+    final cType = contractType.toLowerCase();
+    final lic = (commercialLicenseNumber ?? '').trim();
+    return usage.contains('تجار') ||
+        usage.contains('commercial') ||
+        usage.contains('office') ||
+        usage.contains('shop') ||
+        usage.contains('محل') ||
+        usage.contains('مكتب') ||
+        cType.contains('تجار') ||
+        cType.contains('commercial') ||
+        lic.isNotEmpty;
+  }
 }
