@@ -372,19 +372,41 @@ class _TenantsScreenState extends State<TenantsScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: isExpired
-                        ? AppColors.danger.withValues(alpha: 0.12)
-                        : AppColors.primary.withValues(alpha: 0.12),
-                    child: Text(
-                      tenant.initialLetter,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isExpired ? AppColors.danger : AppColors.primary,
-                      ),
+                  // Tenant Avatar (Image or Initial)
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: isExpired
+                          ? AppColors.danger.withValues(alpha: 0.12)
+                          : AppColors.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
                     ),
+                    clipBehavior: Clip.antiAlias,
+                    alignment: Alignment.center,
+                    child: (tenant.hasIdImage && tenant.idImage != null && tenant.idImage!.isNotEmpty)
+                        ? Image.network(
+                            '${ApiEndpoints.uploadsBase}/${tenant.idImage}',
+                            fit: BoxFit.cover,
+                            width: 44,
+                            height: 44,
+                            errorBuilder: (_, _, _) => Text(
+                              tenant.initialLetter,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isExpired ? AppColors.danger : AppColors.primary,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            tenant.initialLetter,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isExpired ? AppColors.danger : AppColors.primary,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

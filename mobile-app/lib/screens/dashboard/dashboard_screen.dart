@@ -41,8 +41,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _errorMessage = null;
     });
 
-    final res = await ApiService.get(ApiEndpoints.dashboardStats);
+    final statsFuture = ApiService.get(ApiEndpoints.dashboardStats);
+    final profileFuture = ApiService.get(ApiEndpoints.profile);
+
+    final res = await statsFuture;
+    final profileRes = await profileFuture;
+
     if (!mounted) return;
+
+    if (profileRes.success && profileRes.data != null) {
+      final pJson = profileRes.data as Map<String, dynamic>;
+      final profile = pJson['profile'] as Map<String, dynamic>?;
+      if (profile != null) {
+        await StorageService.saveUser(profile);
+        _adminProfile = profile;
+      }
+    }
 
     if (res.success && res.data != null) {
       final json = res.data as Map<String, dynamic>;
@@ -436,6 +450,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildAdminGreetingBanner() {
     final fullName = _adminProfile?['full_name'] ?? 'المدير العام';
     final dateStr = DateFormat('EEEE، d MMMM yyyy', 'ar').format(DateTime.now());
+    final avatar = _adminProfile?['avatar']?.toString();
+    final hasCustomAvatar = avatar != null && avatar.isNotEmpty && avatar != 'avatar.png' && avatar != 'null';
+    final avatarUrl = hasCustomAvatar ? '${ApiEndpoints.uploadsBase}/$avatar' : null;
 
     return Container(
       width: double.infinity,
@@ -453,22 +470,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
+          // Member Profile Avatar (Image or Icon fallback)
           Container(
-            width: 52,
-            height: 52,
+            width: 54,
+            height: 54,
             decoration: BoxDecoration(
               color: AppColors.primaryLight.withValues(alpha: 0.18),
               shape: BoxShape.circle,
               border: Border.all(
-                color: AppColors.primaryLight.withValues(alpha: 0.4),
-                width: 1.5,
+                color: AppColors.primaryLight.withValues(alpha: 0.6),
+                width: 2,
               ),
             ),
-            child: const Icon(
-              Icons.admin_panel_settings_rounded,
-              color: AppColors.primaryLight,
-              size: 28,
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: avatarUrl != null
+                ? Image.network(
+                    avatarUrl,
+                    width: 54,
+                    height: 54,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const Icon(
+                      Icons.person_rounded,
+                      color: AppColors.primaryLight,
+                      size: 30,
+                    ),
+                    loadingBuilder: (ctx, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryLight),
+                        ),
+                      );
+                    },
+                  )
+                : const Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: AppColors.primaryLight,
+                    size: 30,
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -818,7 +859,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Row(
                   children: [
-                    // Tenant Avatar Initial
+                    // Tenant Avatar (Image or Initial)
                     Container(
                       width: 44,
                       height: 44,
@@ -826,15 +867,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
+                      clipBehavior: Clip.antiAlias,
                       alignment: Alignment.center,
-                      child: Text(
-                        tenant.initialLetter,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: (tenant.hasIdImage && tenant.idImage != null && tenant.idImage!.isNotEmpty)
+                          ? Image.network(
+                              '${ApiEndpoints.uploadsBase}/${tenant.idImage}',
+                              fit: BoxFit.cover,
+                              width: 44,
+                              height: 44,
+                              errorBuilder: (_, _, _) => Text(
+                                tenant.initialLetter,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              tenant.initialLetter,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 12),
 

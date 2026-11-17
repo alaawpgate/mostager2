@@ -51,12 +51,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final results = await Future.wait([
       ApiService.get(ApiEndpoints.settings),
       ApiService.get(ApiEndpoints.whats360Status),
+      ApiService.get(ApiEndpoints.profile),
     ]);
 
     if (!mounted) return;
 
     final settingsRes = results[0];
     final statusRes = results[1];
+    final profileRes = results[2];
+
+    if (profileRes.success && profileRes.data != null) {
+      final json = profileRes.data as Map<String, dynamic>;
+      final profile = json['profile'] as Map<String, dynamic>?;
+      if (profile != null) {
+        await StorageService.saveUser(profile);
+        _userProfile = profile;
+      }
+    }
 
     if (settingsRes.success && settingsRes.data != null) {
       final json = settingsRes.data as Map<String, dynamic>;
@@ -361,8 +372,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileCard() {
-    final username = _userProfile?['username'] ?? 'مدير النظام';
-    final role = _userProfile?['role'] ?? 'مشرف النظام';
+    final fullName = _userProfile?['full_name'] ?? 'مدير النظام';
+    final username = _userProfile?['username'] ?? 'admin';
+    final email = _userProfile?['email'] ?? '';
+    final avatar = _userProfile?['avatar']?.toString();
+    final hasCustomAvatar = avatar != null && avatar.isNotEmpty && avatar != 'avatar.png' && avatar != 'null';
+    final avatarUrl = hasCustomAvatar ? '${ApiEndpoints.uploadsBase}/$avatar' : null;
 
     return Card(
       elevation: 0,
@@ -372,20 +387,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const CircleAvatar(
-              radius: 28,
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              child: Icon(Icons.admin_panel_settings_rounded, size: 28),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: avatarUrl != null
+                  ? Image.network(
+                      avatarUrl,
+                      fit: BoxFit.cover,
+                      width: 56,
+                      height: 56,
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.person_rounded,
+                        color: AppColors.primary,
+                        size: 30,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.admin_panel_settings_rounded,
+                      color: AppColors.primary,
+                      size: 30,
+                    ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(username, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  Text(fullName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                   const SizedBox(height: 2),
-                  Text(role, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                  Text('@$username ${email.isNotEmpty ? "• $email" : ""}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 ],
               ),
             ),

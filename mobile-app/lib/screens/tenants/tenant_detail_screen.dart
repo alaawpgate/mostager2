@@ -231,22 +231,36 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
           ],
         ],
         bottom: _tenant != null
-            ? TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.amber,
-                indicatorWeight: 3,
-                tabs: [
-                  const Tab(icon: Icon(Icons.description_outlined), text: 'بيانات وشروط العقد'),
-                  const Tab(icon: Icon(Icons.folder_shared_outlined), text: 'المستندات الرسمية'),
-                  Tab(
-                    icon: const Icon(Icons.receipt_long_outlined),
-                    text: 'سجل الشيكات (${_tenant!.checkCount})',
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(50),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.border, width: 1),
+                    ),
                   ),
-                  const Tab(icon: Icon(Icons.print_outlined), text: 'وثيقة العقد (A4)'),
-                ],
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    indicatorColor: AppColors.primary,
+                    indicatorWeight: 3,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    tabs: [
+                      const Tab(icon: Icon(Icons.description_outlined, size: 19), text: 'بيانات وشروط العقد'),
+                      const Tab(icon: Icon(Icons.folder_shared_outlined, size: 19), text: 'المستندات الرسمية'),
+                      Tab(
+                        icon: const Icon(Icons.receipt_long_outlined, size: 19),
+                        text: 'سجل الشيكات (${_tenant!.checkCount})',
+                      ),
+                      const Tab(icon: Icon(Icons.print_outlined, size: 19), text: 'وثيقة العقد (A4)'),
+                    ],
+                  ),
+                ),
               )
             : null,
       ),
@@ -302,19 +316,40 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: isExpired
-                            ? AppColors.danger.withValues(alpha: 0.12)
-                            : AppColors.primary.withValues(alpha: 0.12),
-                        child: Text(
-                          t.initialLetter,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: isExpired ? AppColors.danger : AppColors.primary,
-                          ),
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: isExpired
+                              ? AppColors.danger.withValues(alpha: 0.12)
+                              : AppColors.primary.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
                         ),
+                        clipBehavior: Clip.antiAlias,
+                        alignment: Alignment.center,
+                        child: (t.hasIdImage && t.idImage != null && t.idImage!.isNotEmpty)
+                            ? Image.network(
+                                '${ApiEndpoints.uploadsBase}/${t.idImage}',
+                                fit: BoxFit.cover,
+                                width: 56,
+                                height: 56,
+                                errorBuilder: (_, _, _) => Text(
+                                  t.initialLetter,
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: isExpired ? AppColors.danger : AppColors.primary,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                t.initialLetter,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: isExpired ? AppColors.danger : AppColors.primary,
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -668,12 +703,19 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
       child: Column(
         children: [
           Container(
-            color: Colors.white,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(color: AppColors.border, width: 1),
+              ),
+            ),
             child: const TabBar(
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               indicatorColor: AppColors.primary,
               indicatorWeight: 3,
+              labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
               tabs: [
                 Tab(text: 'الصفحة الأولى (بيانات العقد)'),
                 Tab(text: 'الصفحة الثانية (الشروط القانونية)'),

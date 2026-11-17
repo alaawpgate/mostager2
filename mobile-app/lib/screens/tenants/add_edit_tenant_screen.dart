@@ -323,19 +323,33 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? 'تعديل بيانات العقد' : 'تسجيل وتوثيق عقد إيجار'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.amber,
-          indicatorWeight: 3,
-          tabs: const [
-            Tab(icon: Icon(Icons.people_outline_rounded), text: 'أطراف العقد'),
-            Tab(icon: Icon(Icons.apartment_rounded), text: 'الوحدة والعقار'),
-            Tab(icon: Icon(Icons.receipt_long_rounded), text: 'العقد والمالية'),
-            Tab(icon: Icon(Icons.gavel_rounded), text: 'الشروط والملاحظات'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(color: AppColors.border, width: 1),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              tabs: const [
+                Tab(icon: Icon(Icons.people_alt_rounded, size: 19), text: 'أطراف العقد'),
+                Tab(icon: Icon(Icons.apartment_rounded, size: 19), text: 'الوحدة والعقار'),
+                Tab(icon: Icon(Icons.receipt_long_rounded, size: 19), text: 'العقد والمالية'),
+                Tab(icon: Icon(Icons.gavel_rounded, size: 19), text: 'الشروط والملاحظات'),
+              ],
+            ),
+          ),
         ),
       ),
       body: Form(

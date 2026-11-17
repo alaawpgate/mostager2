@@ -1233,6 +1233,7 @@ class AdminApp:
     
     def setup_routes(self):
         @self.app.route('/static/uploads/<path:filename>')
+        @self.app.route('/uploads/<path:filename>')
         def serve_uploads(filename):
             from flask import send_from_directory
             return send_from_directory(self.app.config['UPLOAD_FOLDER'], filename)
