@@ -49,6 +49,14 @@ class StorageService {
     return _prefs!.setString(_keyCustomBaseUrl, url);
   }
 
+  static Future<bool> setCustomBaseUrl(String? url) async {
+    await init();
+    if (url == null || url.isEmpty) {
+      return _prefs!.remove(_keyCustomBaseUrl);
+    }
+    return _prefs!.setString(_keyCustomBaseUrl, url);
+  }
+
   static String? getCustomBaseUrl() {
     return _prefs?.getString(_keyCustomBaseUrl);
   }

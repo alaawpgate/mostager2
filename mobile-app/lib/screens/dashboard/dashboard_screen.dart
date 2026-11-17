@@ -8,6 +8,11 @@ import '../../core/services/storage_service.dart';
 import '../../models/dashboard_stats_model.dart';
 import '../../models/tenant_model.dart';
 import '../auth/login_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../settings/settings_screen.dart';
+import '../tenants/add_edit_tenant_screen.dart';
+import '../tenants/tenant_detail_screen.dart';
+import '../tenants/tenants_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -165,12 +170,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgLight,
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: IndexedStack(
+        index: _currentTabIndex,
+        children: [
+          _buildBody(),
+          const TenantsScreen(showAppBar: false),
+          const NotificationsScreen(showAppBar: false),
+          const SettingsScreen(showAppBar: false),
+        ],
+      ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    String titleText = 'مُستأجِر';
+    String subtitleText = 'لوحة التحكم والإشراف';
+
+    if (_currentTabIndex == 1) {
+      titleText = 'سجل المستأجرين';
+      subtitleText = 'إدارة وبحث عقود المستأجرين';
+    } else if (_currentTabIndex == 2) {
+      titleText = 'مركز التنبيهات';
+      subtitleText = 'إرسال وسجل رسائل الواتساب';
+    } else if (_currentTabIndex == 3) {
+      titleText = 'الإعدادات العامة';
+      subtitleText = 'إعدادات النظام والربط';
+    }
+
     return AppBar(
       titleSpacing: 16,
       title: Row(
@@ -197,20 +224,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'مُستأجِر',
-                style: TextStyle(
-                  fontSize: 17,
+                titleText,
+                style: const TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.w900,
                   color: AppColors.textMain,
                 ),
               ),
               Text(
-                'لوحة التحكم والإشراف',
-                style: TextStyle(
+                subtitleText,
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textMuted,
@@ -449,20 +476,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'أهلاً بك، $fullName',
+                  'أهلاً بك، $fullName 👋',
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   dateStr,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: Colors.white.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -474,11 +501,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatCards() {
-    final stats = _stats;
-    final totalTenants = stats?.totalTenants ?? 0;
-    final notifications = stats?.notificationsCount ?? 0;
-    final scheduled = stats?.scheduledCount ?? 0;
-    final templates = stats?.templatesCount ?? 0;
+    final totalTenants = _stats?.totalTenants ?? 0;
+    final sentNotifications = _stats?.notificationsCount ?? 0;
+    final scheduled = _stats?.scheduledCount ?? 0;
+    final templates = _stats?.templatesCount ?? 0;
 
     return Column(
       children: [
@@ -486,7 +512,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Expanded(
               child: _buildMetricCard(
-                title: 'سجل المستأجرين',
+                title: 'إجمالي المستأجرين',
                 value: '$totalTenants',
                 icon: Icons.people_alt_rounded,
                 color: AppColors.primary,
@@ -496,9 +522,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildMetricCard(
-                title: 'إشعارات مرسلة',
-                value: '$notifications',
-                icon: Icons.notifications_active_rounded,
+                title: 'تنبيهات مرسلة',
+                value: '$sentNotifications',
+                icon: Icons.send_rounded,
                 color: AppColors.info,
                 surfaceColor: AppColors.infoSurface,
               ),
@@ -510,9 +536,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Expanded(
               child: _buildMetricCard(
-                title: 'رسائل مجدولة',
+                title: 'تنبيهات مجدولة',
                 value: '$scheduled',
-                icon: Icons.schedule_send_rounded,
+                icon: Icons.schedule_rounded,
                 color: AppColors.warning,
                 surfaceColor: AppColors.warningSurface,
               ),
@@ -608,13 +634,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: 'إضافة مستأجر',
             icon: Icons.person_add_alt_1_rounded,
             color: AppColors.primary,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('شاشة إضافة مستأجر سيتم فتحها في الخطوة القادمة'),
-                  behavior: SnackBarBehavior.floating,
-                ),
+            onTap: () async {
+              final added = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const AddEditTenantScreen()),
               );
+              if (added == true) {
+                _fetchDashboardData();
+              }
             },
           ),
           _buildActionButton(
@@ -622,25 +649,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icons.chat_bubble_outline_rounded,
             color: AppColors.info,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('مركز الرسائل متصل وجاهز'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              setState(() => _currentTabIndex = 2);
             },
           ),
           _buildActionButton(
-            label: 'تقارير العقود',
-            icon: Icons.bar_chart_rounded,
+            label: 'سجل العقود',
+            icon: Icons.assignment_outlined,
             color: AppColors.warning,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('تقارير العقود جاري تجهيزها'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              setState(() => _currentTabIndex = 1);
             },
           ),
           _buildActionButton(
@@ -770,7 +787,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTenantCard(TenantModel tenant) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -783,119 +799,137 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Tenant Avatar Initial
-              Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  tenant.initialLetter,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Name & Status
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () async {
+            final res = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(builder: (_) => TenantDetailScreen(tenantId: tenant.id)),
+            );
+            if (res == true) {
+              _fetchDashboardData();
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Text(
-                      tenant.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textMain,
+                    // Tenant Avatar Initial
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        tenant.initialLetter,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'مستأجر معتمد',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+
+                    // Name & Status
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tenant.name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textMain,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'مستأجر معتمد',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Quick Call & WhatsApp Buttons
+                    if (tenant.phone.isNotEmpty) ...[
+                      IconButton(
+                        icon: const Icon(Icons.phone_rounded, color: AppColors.primary, size: 20),
+                        tooltip: 'اتصال هاتف',
+                        onPressed: () => _makePhoneCall(tenant.phone),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.chat_rounded, color: AppColors.success, size: 20),
+                        tooltip: 'مراسلة واتساب',
+                        onPressed: () => _launchWhatsApp(tenant.phone),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.borderLight),
+                const SizedBox(height: 10),
+
+                // Date Chips Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Start Date
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textMuted),
+                        const SizedBox(width: 5),
+                        Text(
+                          'البدء: ${tenant.startDate ?? 'غير محدد'}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+
+                    // End Date with Warning Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.warning.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.timer_outlined, size: 13, color: AppColors.warning),
+                          const SizedBox(width: 5),
+                          Text(
+                            tenant.endDate ?? 'مستمر',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.warning,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
-              ),
-
-              // Quick Call & WhatsApp Buttons
-              if (tenant.phone.isNotEmpty) ...[
-                IconButton(
-                  icon: const Icon(Icons.phone_rounded, color: AppColors.primary, size: 20),
-                  tooltip: 'اتصال هاتف',
-                  onPressed: () => _makePhoneCall(tenant.phone),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chat_rounded, color: AppColors.success, size: 20),
-                  tooltip: 'مراسلة واتساب',
-                  onPressed: () => _launchWhatsApp(tenant.phone),
                 ),
               ],
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: AppColors.borderLight),
-          const SizedBox(height: 10),
-
-          // Date Chips Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Start Date
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textMuted),
-                  const SizedBox(width: 5),
-                  Text(
-                    'البدء: ${tenant.startDate ?? 'غير محدد'}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-
-              // End Date with Warning Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.warning.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer_outlined, size: 13, color: AppColors.warning),
-                    const SizedBox(width: 5),
-                    Text(
-                      tenant.endDate ?? 'مستمر',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.warning,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -905,21 +939,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       selectedIndex: _currentTabIndex,
       onDestinationSelected: (index) {
         setState(() => _currentTabIndex = index);
-        if (index != 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                index == 1
-                    ? 'شاشة سجل المستأجرين كاملة سيتم فتحها في الخطوة القادمة'
-                    : index == 2
-                        ? 'شاشة التنبيهات والرسائل'
-                        : 'شاشة الإعدادات العامة',
-              ),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
       },
       destinations: const [
         NavigationDestination(

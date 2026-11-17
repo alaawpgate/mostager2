@@ -18,8 +18,14 @@ class AppColors {
   static const Color cardLight = Colors.white;
   static const Color borderLight = Color(0xFFE2E8F0);
 
+  // Aliases for convenience
+  static const Color background = bgLight;
+  static const Color border = borderLight;
+  static const Color secondary = bgDarkCard;
+
   // Typography Colors
   static const Color textMain = Color(0xFF0F172A);
+  static const Color textPrimary = Color(0xFF0F172A);
   static const Color textSecondary = Color(0xFF475569);
   static const Color textMuted = Color(0xFF64748B);
   static const Color textLight = Colors.white;
