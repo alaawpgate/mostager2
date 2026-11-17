@@ -2977,8 +2977,8 @@ class AdminApp:
                 params = []
                 
                 if search:
-                    query += ' WHERE tenant_name LIKE ? OR tenant_phone LIKE ?'
-                    params.extend([f'%{search}%', f'%{search}%'])
+                    query += ' WHERE tenant_name LIKE ? OR tenant_phone LIKE ? OR page_one_content LIKE ? OR commercial_license_number LIKE ?'
+                    params.extend([f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%'])
                 
                 query += ' ORDER BY id DESC'
                 cursor.execute(query, params)
