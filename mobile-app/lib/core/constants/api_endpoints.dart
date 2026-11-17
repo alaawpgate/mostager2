@@ -2,16 +2,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiEndpoints {
-  // Default development Base URL
+  // Default production Base URL
   static String get defaultBaseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8080/api/v1';
-    }
-    if (Platform.isAndroid) {
-      // 10.0.2.2 maps to host localhost in Android emulator
-      return 'http://10.0.2.2:8080/api/v1';
-    }
-    return 'http://127.0.0.1:8080/api/v1';
+    return 'https://mostager.virilax.shop/api/v1';
   }
 
   static String get uploadsBase {
