@@ -119,6 +119,27 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
     } catch (_) {}
   }
 
+  void _openContractPrint() async {
+    if (_tenant == null) return;
+    final base = ApiService.baseUrl.replaceAll('/api/v1', '');
+    final url = Uri.parse('$base/api/v1/tenants/${_tenant!.id}/contract');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر فتح رابط وثيقة العقد')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ: $e')),
+      );
+    }
+  }
+
   void _previewImageFullscreen(String imageUrl, String title) {
     showDialog(
       context: context,
@@ -208,6 +229,11 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
         title: Text(_tenant?.name ?? 'ملف المستأجر والعقد'),
         actions: [
           if (_tenant != null) ...[
+            IconButton(
+              icon: const Icon(Icons.print_outlined),
+              tooltip: 'تحميل وطباعة العقد (A4 PDF)',
+              onPressed: _openContractPrint,
+            ),
             IconButton(
               icon: const Icon(Icons.edit_rounded),
               tooltip: 'تعديل بيانات العقد',
@@ -702,6 +728,48 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
       length: 2,
       child: Column(
         children: [
+          // Action banner to download/print the exact A4 contract
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.verified_rounded, color: AppColors.primary, size: 26),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'وثيقــــة عقــــد إيجــــار الرسمية (A4)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                      ),
+                      Text(
+                        'نسخة طبق الأصل معتمدة رقمياً بالبيانات المحدثة',
+                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  icon: const Icon(Icons.download_rounded, size: 16),
+                  label: const Text('تحميل PDF', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: _openContractPrint,
+                ),
+              ],
+            ),
+          ),
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,

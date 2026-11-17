@@ -3285,6 +3285,136 @@ class AdminApp:
             conn.close()
             return jsonify({'success': True, 'message': 'تم رفع الصورة وحفظها بنجاح', 'filename': clean_name, 'image_url': f"/static/uploads/{clean_name}"})
 
+        @self.app.route('/api/v1/tenants/<int:tenant_id>/contract')
+        @self.app.route('/tenants/<int:tenant_id>/contract')
+        def view_contract_printable(tenant_id):
+            """عرض وطباعة وثيقة عقد الإيجار (الصفحة الأولى والثانية) مطابقة للأصل A4"""
+            conn = sqlite3.connect('database.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT tenant_name, page_one_content, page_two_content FROM tenants WHERE id = ?', (tenant_id,))
+            row = cursor.fetchone()
+            conn.close()
+            
+            if not row:
+                return "المستأجر غير موجود", 404
+                
+            tenant_name = row[0] or 'عقد إيجار'
+            page_one = row[1] or ''
+            page_two = row[2] or ''
+            
+            html = f'''<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وثيقــــة عقــــد إيجــــار - {tenant_name}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Roboto:wght@400;500;700&display=swap');
+    
+    * {{
+      box-sizing: border-box;
+    }}
+    body {{
+      font-family: 'Cairo', Arial, sans-serif;
+      background-color: #525659;
+      margin: 0;
+      padding: 20px;
+      color: #1a1a1a;
+    }}
+    .no-print {{
+      position: sticky;
+      top: 15px;
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }}
+    .print-btn {{
+      background: linear-gradient(135deg, #0f766e, #0d9488);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }}
+    .print-btn:hover {{
+      transform: translateY(-2px);
+    }}
+    .page-sheet {{
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 25px auto;
+      background: white;
+      padding: 18mm 15mm;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      position: relative;
+    }}
+    @page {{
+      size: A4 portrait;
+      margin: 10mm;
+    }}
+    @media print {{
+      body {{
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }}
+      .no-print {{
+        display: none !important;
+      }}
+      .page-sheet {{
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        min-height: auto !important;
+        page-break-after: always;
+        break-after: page;
+      }}
+      .page-sheet:last-child {{
+        page-break-after: avoid;
+        break-after: avoid;
+      }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()" class="print-btn">
+      <i class="fas fa-print"></i>
+      تحميل وطباعة العقد (A4 PDF)
+    </button>
+  </div>
+  
+  <!-- الصفحة الأولى -->
+  <div class="page-sheet">
+    {page_one}
+  </div>
+  
+  <!-- الصفحة الثانية -->
+  <div class="page-sheet">
+    {page_two}
+  </div>
+  
+  <script>
+    if (window.location.search.includes('print=true')) {{
+      window.onload = function() {{ window.print(); }};
+    }}
+  </script>
+</body>
+</html>'''
+            return html
+
         @self.app.route('/api/v1/auth/forgot-password', methods=['POST'])
         def api_v1_auth_forgot_password():
             """استعادة كلمة المرور عبر API الموبايل"""
