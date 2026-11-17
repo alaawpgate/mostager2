@@ -1,8 +1,16 @@
-# Disable directory indexing
 Options -Indexes
+RewriteEngine On
+RewriteBase /
 
-# Protect sensitive database, environment, and code files from direct download
-<FilesMatch "\.(db|sqlite|sqlite3|py|pyc|log|env|git|sh|md|bat)$">
+# Custom 503 handler that auto-wakes the server if it ever stops
+ErrorDocument 503 /watchdog.php
+
+# 1. Direct static and uploads routing
+RewriteRule ^uploads/(.*)$ static/uploads/$1 [L]
+RewriteRule ^static/(.*)$ static/$1 [L]
+
+# 2. Deny access to sensitive files
+<FilesMatch "\.(db|sqlite|sqlite3|py|pyc|log|env|git|sh|bat|spec)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -12,13 +20,9 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# Explicitly protect database.db
-<Files "database.db">
-    <IfModule mod_authz_core.c>
-        Require all denied
-    </IfModule>
-    <IfModule !mod_authz_core.c>
-        Order allow,deny
-        Deny from all
-    </IfModule>
-</Files>
+# 3. Direct access for existing static files
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# 4. Proxy everything else to Python Waitress backend
+RewriteRule ^(.*)$ http://127.0.0.1:19080/$1 [P,L]
