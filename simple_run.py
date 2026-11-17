@@ -11,9 +11,9 @@ try:
     print("Starting server on http://localhost:8080")
     print("Press Ctrl+C to stop")
     
-    # تشغيل الخادم
+    # تشغيل الخادم على جميع الواجهات 0.0.0.0 للسماح باتصال تطبيق الموبايل والأجهزة الأخرى
     admin_app.app.run(
-        host='127.0.0.1',
+        host='0.0.0.0',
         port=8080,
         debug=False,
         use_reloader=False,
