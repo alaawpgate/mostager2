@@ -379,56 +379,59 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEditing ? 'تعديل بيانات العقد' : 'تسجيل وتوثيق عقد إيجار'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAEFF2),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              indicator: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: AppColors.primary,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: Colors.white,
-              unselectedLabelColor: const Color(0xFF334155),
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              tabs: const [
-                Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'أطراف العقد'),
-                Tab(icon: Icon(Icons.apartment_rounded, size: 18), text: 'الوحدة والعقار'),
-                Tab(icon: Icon(Icons.receipt_long_rounded, size: 18), text: 'العقد والمالية'),
-                Tab(icon: Icon(Icons.post_add_rounded, size: 18), text: 'تفاصيل العقد الإضافية'),
-              ],
-            ),
-          ),
-        ),
       ),
       body: Form(
         key: _formKey,
-        child: TabBarView(
-          controller: _tabController,
+        child: Column(
           children: [
-            _buildPartiesTab(),
-            _buildUnitTab(),
-            _buildContractTab(),
-            _buildAdditionalDetailsTab(),
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAEFF2),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.primary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                labelColor: Colors.white,
+                unselectedLabelColor: const Color(0xFF334155),
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                tabs: const [
+                  Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'أطراف العقد'),
+                  Tab(icon: Icon(Icons.apartment_rounded, size: 18), text: 'الوحدة والعقار'),
+                  Tab(icon: Icon(Icons.receipt_long_rounded, size: 18), text: 'العقد والمالية'),
+                  Tab(icon: Icon(Icons.post_add_rounded, size: 18), text: 'تفاصيل العقد الإضافية'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildPartiesTab(),
+                  _buildUnitTab(),
+                  _buildContractTab(),
+                  _buildAdditionalDetailsTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),

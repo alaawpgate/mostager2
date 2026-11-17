@@ -256,51 +256,6 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
             ),
           ],
         ],
-        bottom: _tenant != null
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(60),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAEFF2),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    indicator: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: AppColors.primary,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.35),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: const Color(0xFF334155),
-                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                    tabs: [
-                      const Tab(icon: Icon(Icons.description_outlined, size: 18), text: 'بيانات وشروط العقد'),
-                      const Tab(icon: Icon(Icons.folder_shared_outlined, size: 18), text: 'المستندات الرسمية'),
-                      Tab(
-                        icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                        text: 'سجل الشيكات (${_tenant!.checkCount})',
-                      ),
-                      const Tab(icon: Icon(Icons.print_outlined, size: 18), text: 'وثيقة العقد (A4)'),
-                    ],
-                  ),
-                ),
-              )
-            : null,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
@@ -317,13 +272,59 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
                     ],
                   ),
                 )
-              : TabBarView(
-                  controller: _tabController,
+              : Column(
                   children: [
-                    _buildTermsTab(),
-                    _buildDocsTab(),
-                    _buildChecksTab(),
-                    _buildContractA4Tab(),
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAEFF2),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.start,
+                        indicator: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.primary,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelColor: Colors.white,
+                        unselectedLabelColor: const Color(0xFF334155),
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        tabs: [
+                          const Tab(icon: Icon(Icons.description_outlined, size: 18), text: 'بيانات وشروط العقد'),
+                          const Tab(icon: Icon(Icons.folder_shared_outlined, size: 18), text: 'المستندات الرسمية'),
+                          Tab(
+                            icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                            text: 'سجل الشيكات (${_tenant!.checkCount})',
+                          ),
+                          const Tab(icon: Icon(Icons.print_outlined, size: 18), text: 'وثيقة العقد (A4)'),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildTermsTab(),
+                          _buildDocsTab(),
+                          _buildChecksTab(),
+                          _buildContractA4Tab(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
     );
