@@ -852,13 +852,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
-                            'مستأجر معتمد',
-                            style: TextStyle(
+                          Text(
+                            tenant.displayUnitInfo,
+                            style: const TextStyle(
                               fontSize: 11,
-                              color: AppColors.textMuted,
-                              fontWeight: FontWeight.w500,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),

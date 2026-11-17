@@ -59,6 +59,42 @@ void main() {
       expect(map['contract_type'], 'سكني');
       expect(map['notes'], 'ملاحظة خاصة');
     });
+
+    test('Full Tenancy Contract structured fields parsing', () {
+      final json = {
+        'id': 200,
+        'tenant_name': 'علاء مصطفي',
+        'tenant_phone': '01009931190',
+        'start_date': '20/7/2024',
+        'end_date': '21/4/2025',
+        'contract_type': 'جديد',
+        'unit_usage': 'Family Residence',
+        'unit_number': '504',
+        'property_number': 'PROPA56720313',
+        'location': 'TOWN CENTER',
+        'block_number': 'A',
+        'plot_number': '5',
+        'unit_type': '3 BHK',
+        'contract_number': 'RENT25061768',
+        'rent_amount': '28000.00',
+        'payment_count': 12,
+        'check_images': 'check1.jpg,check2.jpg',
+        'lessor_name': 'علاء مصطفي',
+      };
+
+      final tenant = TenantModel.fromJson(json);
+      expect(tenant.unitNumber, '504');
+      expect(tenant.propertyNumber, 'PROPA56720313');
+      expect(tenant.location, 'TOWN CENTER');
+      expect(tenant.unitType, '3 BHK');
+      expect(tenant.rentAmount, 28000.0);
+      expect(tenant.paymentCount, 12);
+      expect(tenant.checkCount, 2);
+      expect(tenant.checkImagesList.length, 2);
+      expect(tenant.formattedRentAmount, '28000 درهم');
+      expect(tenant.displayUnitInfo, contains('وحدة 504'));
+      expect(tenant.displayUnitInfo, contains('PROPA56720313'));
+    });
   });
 
   group('Notification & Template Models Tests', () {
@@ -77,6 +113,25 @@ void main() {
       expect(log.id, 42);
       expect(log.tenantName, 'خالد محمد');
       expect(log.isSuccess, isTrue);
+    });
+
+    test('NotificationLogModel failure with details does not crash', () {
+      final json = {
+        'id': 112,
+        'tenant_name': 'علاء مصطفي',
+        'notification_type': 'تذكير شهري تلقائي',
+        'status': 'فشل',
+        'raw_status': 'فشل - فشل في جميع طرق الإرسال (3 طرق × تنسيقات متعددة)',
+        'status_details': 'فشل - فشل في جميع طرق الإرسال (3 طرق × تنسيقات متعددة)',
+        'sent_at': '2026-11-16 12:59:06',
+        'phone_number': '0501112233',
+        'message_content': 'رسالة تجريبية',
+      };
+
+      final log = NotificationLogModel.fromJson(json);
+      expect(log.isSuccess, isFalse);
+      expect(log.status, 'فشل');
+      expect(log.statusDetails, contains('فشل في جميع طرق الإرسال'));
     });
 
     test('MessageTemplateModel serialization', () {

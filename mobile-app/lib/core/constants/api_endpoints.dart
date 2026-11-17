@@ -14,6 +14,11 @@ class ApiEndpoints {
     return 'http://127.0.0.1:8080/api/v1';
   }
 
+  static String get uploadsBase {
+    final base = defaultBaseUrl.replaceAll('/api/v1', '');
+    return '$base/static/uploads';
+  }
+
   // Auth
   static const String login = '/auth/login';
   static const String profile = '/auth/profile';

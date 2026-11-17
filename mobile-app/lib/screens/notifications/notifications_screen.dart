@@ -236,53 +236,142 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(
-              log.isSuccess ? Icons.check_circle_rounded : Icons.error_rounded,
-              color: log.isSuccess ? AppColors.success : AppColors.danger,
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: log.isSuccess
+                  ? AppColors.success.withValues(alpha: 0.12)
+                  : AppColors.danger.withValues(alpha: 0.12),
+              child: Icon(
+                log.isSuccess ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                size: 20,
+                color: log.isSuccess ? AppColors.success : AppColors.danger,
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(log.notificationType, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                log.notificationType,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('المستأجر: ${log.tenantName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('الهاتف: ${log.phoneNumber}', textDirection: TextDirection.ltr),
-            const SizedBox(height: 4),
-            Text('تاريخ الإرسال: ${log.sentAt ?? 'غير محدد'}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            const SizedBox(height: 12),
-            const Text('محتوى الرسالة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 4),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDetailRow('المستأجر', log.tenantName),
+              if (log.phoneNumber.isNotEmpty)
+                _buildDetailRow('الهاتف', log.phoneNumber, isLtr: true),
+              _buildDetailRow('التاريخ والوقت', log.sentAt ?? 'غير محدد'),
+              _buildDetailRow(
+                'حالة الإرسال',
+                log.isSuccess ? 'تم الإرسال بنجاح' : 'فشل الإرسال',
+                color: log.isSuccess ? AppColors.success : AppColors.danger,
               ),
-              child: Text(log.messageContent, style: const TextStyle(fontSize: 13, height: 1.5)),
-            ),
-          ],
+              if (!log.isSuccess && log.statusDetails.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.danger.withValues(alpha: 0.25)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.danger),
+                          SizedBox(width: 6),
+                          Text('تفاصيل الخطأ المسجلة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.danger)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        log.statusDetails,
+                        style: const TextStyle(fontSize: 12, color: AppColors.danger, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              const Text('نص الرسالة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  log.messageContent.isNotEmpty ? log.messageContent : 'رسالة تلقائية بدون نص مسجل',
+                  style: const TextStyle(fontSize: 13, height: 1.5),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              final cleanPhone = log.phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
-              final msg = Uri.encodeComponent(log.messageContent);
-              launchUrl(Uri.parse('https://wa.me/$cleanPhone?text=$msg'), mode: LaunchMode.externalApplication);
-            },
-            child: const Text('إعادة الإرسال عبر واتساب'),
-          ),
+          if (log.phoneNumber.isNotEmpty)
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.whatsApp,
+                side: const BorderSide(color: AppColors.whatsApp),
+              ),
+              icon: const Icon(Icons.chat_rounded, size: 16),
+              label: const Text('إرسال يدوي عبر واتساب'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                final cleanPhone = log.phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+                final msg = Uri.encodeComponent(log.messageContent);
+                launchUrl(Uri.parse('https://wa.me/$cleanPhone?text=$msg'), mode: LaunchMode.externalApplication);
+              },
+            ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool isLtr = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 85,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ),
+          Expanded(
+            child: Directionality(
+              textDirection: isLtr ? TextDirection.ltr : TextDirection.rtl,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color ?? AppColors.textPrimary,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -384,28 +473,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           return Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: AppColors.border),
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: log.isSuccess
+                    ? AppColors.border
+                    : AppColors.danger.withValues(alpha: 0.25),
+              ),
             ),
             color: Colors.white,
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               onTap: () => _showLogDetail(log),
               child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header Row: Avatar, Tenant Name, Notification Type, Status Pill
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         CircleAvatar(
-                          radius: 16,
+                          radius: 17,
                           backgroundColor: log.isSuccess
                               ? AppColors.success.withValues(alpha: 0.12)
                               : AppColors.danger.withValues(alpha: 0.12),
                           child: Icon(
-                            log.isSuccess ? Icons.check_rounded : Icons.close_rounded,
-                            size: 18,
+                            log.isSuccess ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                            size: 19,
                             color: log.isSuccess ? AppColors.success : AppColors.danger,
                           ),
                         ),
@@ -414,48 +509,153 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(log.tenantName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              Text(log.notificationType, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                              Text(
+                                log.tenantName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                log.notificationType,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        // Concise Status Pill (always fits, never overflows)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: log.isSuccess
                                 ? AppColors.success.withValues(alpha: 0.1)
                                 : AppColors.danger.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            log.status,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: log.isSuccess ? AppColors.success : AppColors.danger,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: log.isSuccess
+                                  ? AppColors.success.withValues(alpha: 0.25)
+                                  : AppColors.danger.withValues(alpha: 0.25),
                             ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                log.isSuccess ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                size: 12,
+                                color: log.isSuccess ? AppColors.success : AppColors.danger,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                log.isSuccess ? 'تم الإرسال' : 'فشل',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: log.isSuccess ? AppColors.success : AppColors.danger,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      log.messageContent,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+
+                    const SizedBox(height: 10),
+
+                    // Message Content Box
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        log.messageContent,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textPrimary,
+                          height: 1.4,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
+
+                    // Failure Details Alert Box (if failed)
+                    if (!log.isSuccess && log.statusDetails.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.danger.withValues(alpha: 0.07),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.danger.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline_rounded, size: 14, color: AppColors.danger),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                log.statusDetails,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.danger,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 10),
+
+                    // Footer Row: Phone Number & Sent Date
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Directionality(
-                          textDirection: TextDirection.ltr,
-                          child: Text(log.phoneNumber, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        ),
-                        Text(
-                          log.sentAt != null ? log.sentAt!.split(' ')[0] : '',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        if (log.phoneNumber.isNotEmpty)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.phone_iphone_rounded, size: 13, color: AppColors.textSecondary),
+                              const SizedBox(width: 4),
+                              Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Text(
+                                  log.phoneNumber,
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          const SizedBox(),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.access_time_rounded, size: 13, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              log.sentAt != null && log.sentAt!.isNotEmpty ? log.sentAt! : '',
+                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            ),
+                          ],
                         ),
                       ],
                     ),

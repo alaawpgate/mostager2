@@ -506,7 +506,143 @@ class _TenantsScreenState extends State<TenantsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+
+              // Leased Unit & Property Highlights
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.apartment_rounded, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        tenant.displayUnitInfo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    if (tenant.contractNumber != null && tenant.contractNumber!.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        tenant.contractNumber!,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Financial & Cheques Row
+              Row(
+                children: [
+                  // Rent Value
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.teal.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.payments_outlined, size: 13, color: Colors.teal.shade800),
+                        const SizedBox(width: 4),
+                        Text(
+                          tenant.formattedRentAmount,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+
+                  // Cheques count
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.receipt_long_outlined, size: 13, color: Colors.amber.shade900),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${tenant.paymentCount ?? tenant.checkCount} دفعة',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // End date
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.event_outlined, size: 13, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        tenant.endDate != null ? _formatDate(tenant.endDate) : 'عقد ساري',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isExpired ? AppColors.danger : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Document Attachments Indicators
+              Row(
+                children: [
+                  _buildDocBadge('الهوية', tenant.hasIdImage),
+                  const SizedBox(width: 6),
+                  _buildDocBadge('العقد الورقي', tenant.hasContractImage),
+                  const SizedBox(width: 6),
+                  _buildDocBadge('الشيكات (${tenant.checkCount})', tenant.checkCount > 0),
+                  if (tenant.hasLicenseImage || (tenant.commercialLicenseNumber != null && tenant.commercialLicenseNumber!.isNotEmpty)) ...[
+                    const SizedBox(width: 6),
+                    _buildDocBadge('الرخصة', tenant.hasLicenseImage),
+                  ],
+                ],
+              ),
+
+              const SizedBox(height: 10),
               const Divider(height: 1, color: AppColors.border),
               const SizedBox(height: 10),
 
@@ -595,6 +731,42 @@ class _TenantsScreenState extends State<TenantsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDocBadge(String label, bool isAttached) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: isAttached
+            ? AppColors.success.withValues(alpha: 0.1)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: isAttached
+              ? AppColors.success.withValues(alpha: 0.3)
+              : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAttached ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            size: 11,
+            color: isAttached ? AppColors.success : Colors.grey.shade400,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isAttached ? FontWeight.bold : FontWeight.normal,
+              color: isAttached ? AppColors.success : Colors.grey.shade600,
+            ),
+          ),
+        ],
       ),
     );
   }

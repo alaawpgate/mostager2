@@ -407,6 +407,290 @@ class AdminApp:
         
         return tenant_name, tenant_phone, start_date, end_date
     
+    def parse_contract_page_one(self, page_one_content):
+        """Extract all detailed structured contract fields from page_one_content HTML"""
+        details = {
+            'lessor_name': '',
+            'lessor_phone': '',
+            'lessor_id': '',
+            'tenant_name': '',
+            'tenant_phone': '',
+            'tenant_id': '',
+            'unit_usage': '',
+            'unit_no': '',
+            'property_no': '',
+            'location': '',
+            'block_no': '',
+            'plot_no': '',
+            'unit_type': '',
+            'makani_no': '',
+            'etihad_we_no': '',
+            'contract_no': '',
+            'contract_amount': '',
+            'contract_period': '',
+            'start_date': '',
+            'end_date': '',
+            'payment_terms': ''
+        }
+        if not page_one_content:
+            return details
+        try:
+            soup = BeautifulSoup(page_one_content, 'html.parser')
+            for dv in soup.find_all('td', class_='data-value'):
+                val = dv.get_text(strip=True)
+                prev = dv.find_previous_sibling('td', class_='label-en')
+                lbl = prev.get_text(strip=True).upper() if prev else ''
+                next_ar = dv.find_next_sibling('td', class_='label-ar')
+                lbl_ar = next_ar.get_text(strip=True) if next_ar else ''
+                sec = dv.find_previous('div', class_='section-header')
+                sec_text = sec.get_text().upper() if sec else ''
+                
+                # Check Leased Unit FIRST to prevent 'المؤجر' matching 'المؤجرة'
+                if 'LEASED UNIT' in sec_text or 'الوحدة' in sec_text:
+                    if 'USAGE' in lbl or 'استخدام' in lbl_ar: details['unit_usage'] = val
+                    elif 'عقار' in lbl_ar or 'PROPERTY' in lbl: details['property_no'] = val
+                    elif 'رقم الوحدة' in lbl_ar or ('UNIT' in lbl and not details['unit_no']): details['unit_no'] = val
+                    elif 'LOCATION' in lbl or 'المنطقة' in lbl_ar: details['location'] = val
+                    elif 'BLOCK' in lbl or 'المربع' in lbl_ar: details['block_no'] = val
+                    elif 'PLOT' in lbl or 'القطعة' in lbl_ar: details['plot_no'] = val
+                    elif 'TYPE' in lbl or 'نوع' in lbl_ar: details['unit_type'] = val
+                    elif 'MAKANI' in lbl or 'مكاني' in lbl_ar: details['makani_no'] = val
+                    elif 'ETIHAD' in lbl or 'كهرباء' in lbl_ar: details['etihad_we_no'] = val
+                elif 'TENANT' in sec_text or 'المستأجر' in sec_text:
+                    if 'NAME' in lbl or 'الاسم' in lbl_ar: details['tenant_name'] = val
+                    elif 'MOBILE' in lbl or 'الهاتف' in lbl_ar: details['tenant_phone'] = val
+                    elif 'ID' in lbl or 'الهوية' in lbl_ar: details['tenant_id'] = val
+                elif 'LEASOR' in sec_text or 'المؤجر' in sec_text:
+                    if 'NAME' in lbl or 'الاسم' in lbl_ar: details['lessor_name'] = val
+                    elif 'MOBILE' in lbl or 'الهاتف' in lbl_ar: details['lessor_phone'] = val
+                    elif 'ID' in lbl or 'الهوية' in lbl_ar: details['lessor_id'] = val
+                elif 'CONTRACT' in sec_text or 'العقد' in sec_text:
+                    if 'CONTRACT NO' in lbl or 'رقم العقد' in lbl_ar: details['contract_no'] = val
+                    elif 'AMOUNT' in lbl or 'قيمة' in lbl_ar: details['contract_amount'] = val
+                    elif 'PERIOD' in lbl or 'مدة' in lbl_ar: details['contract_period'] = val
+                    elif 'START' in lbl or 'البدء' in lbl_ar: details['start_date'] = val
+                    elif 'END' in lbl or 'الانتهاء' in lbl_ar: details['end_date'] = val
+                    elif 'PAY' in lbl or 'TERMS' in lbl or 'الدفع' in lbl_ar: details['payment_terms'] = val
+        except Exception as e:
+            print(f"Error parsing contract: {e}")
+        return details
+
+    def build_contract_page_one_html(self, data):
+        """Construct page_one_content HTML with filled contract values"""
+        lessor_name = data.get('lessor_name') or 'علاء مصطفي'
+        lessor_phone = data.get('lessor_phone') or '01009931190'
+        lessor_id = data.get('lessor_id') or '784-1965-3975208-7'
+        
+        tenant_name = data.get('tenant_name') or data.get('name') or ''
+        tenant_phone = data.get('tenant_phone') or data.get('phone') or ''
+        tenant_id = data.get('tenant_id_number') or data.get('tenant_id') or ''
+        
+        unit_usage = data.get('unit_usage') or 'سكن عائلي / Family Residence'
+        unit_no = data.get('unit_number') or data.get('unit_no') or ''
+        property_no = data.get('property_number') or data.get('property_no') or ''
+        location = data.get('location') or ''
+        block_no = data.get('block_number') or data.get('block_no') or ''
+        plot_no = data.get('plot_number') or data.get('plot_no') or ''
+        unit_type = data.get('unit_type') or '3 BHK'
+        makani_no = data.get('makani_number') or data.get('makani_no') or '********'
+        etihad_we_no = data.get('etihad_we_number') or data.get('etihad_we_no') or ''
+        
+        contract_no = data.get('contract_number') or data.get('contract_no') or ''
+        contract_amount = data.get('rent_amount') or data.get('contract_amount') or ''
+        contract_period = data.get('contract_period') or 'One Year'
+        start_date = data.get('start_date') or ''
+        end_date = data.get('end_date') or ''
+        payment_terms = data.get('payment_terms') or ''
+        
+        return f'''<style>
+    .contract-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }}
+    .contract-title h1, .contract-title h2 {{
+        margin: 0;
+        text-align: center;
+        font-weight: bold;
+    }}
+    .contract-title h1 {{ font-size: 24px; }}
+    .contract-title h2 {{ font-size: 22px; font-family: 'Roboto', sans-serif; }}
+    .section-header {{
+        background-color: #6b2b2b;
+        color: white;
+        padding: 8px 15px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        font-size: 16px;
+    }}
+    .data-table {{ width: 100%; border-collapse: collapse; margin-bottom: 2rem; }}
+    .data-table td {{ border: 1px solid black; padding: 8px; vertical-align: middle; font-size: 14px; }}
+    .label-en {{ text-align: left; font-weight: bold; width: 20%; font-family: 'Roboto', sans-serif; direction: ltr; }}
+    .label-ar {{ text-align: right; font-weight: bold; width: 20%; }}
+    .data-value {{ text-align: center; }}
+    .contract-footer {{ margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd; }}
+</style>
+
+<header class="contract-header">
+    <div></div>
+    <div class="contract-title">
+        <h1>وثيقــــة عقــــد إيجــــار</h1>
+        <h2>TENANCY CONTRACT</h2>
+    </div>
+    <div></div>
+</header>
+
+<div class="section-header">
+    <span>LEASOR DETAILS</span>
+    <span>تفاصيل المؤجر</span>
+</div>
+<table class="data-table">
+    <tbody>
+        <tr>
+            <td class="label-en">NAME:</td>
+            <td class="data-value" contenteditable="true">{lessor_name}</td>
+            <td class="label-ar">: الاسم</td>
+        </tr>
+        <tr>
+            <td class="label-en">MOBILE No.</td>
+            <td class="data-value" contenteditable="true">{lessor_phone}</td>
+            <td class="label-ar">رقم الهاتف المتحرك</td>
+        </tr>
+        <tr>
+            <td class="label-en">ID #</td>
+            <td class="data-value" contenteditable="true">{lessor_id}</td>
+            <td class="label-ar">رقم الهوية</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="section-header">
+    <span>TENANT DETAILS</span>
+    <span>تفاصيل المستأجر</span>
+</div>
+<table class="data-table">
+    <tbody>
+        <tr>
+            <td class="label-en">NAME:</td>
+            <td class="data-value" contenteditable="true" id="tenant_name_field">{tenant_name}</td>
+            <td class="label-ar">: الاسم</td>
+        </tr>
+        <tr>
+            <td class="label-en">MOBILE No.</td>
+            <td class="data-value" contenteditable="true">{tenant_phone}</td>
+            <td class="label-ar">رقم الهاتف المتحرك</td>
+        </tr>
+        <tr>
+            <td class="label-en">ID #</td>
+            <td class="data-value" contenteditable="true">{tenant_id}</td>
+            <td class="label-ar">رقم الهوية</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="section-header">
+    <span>LEASED UNIT DETAILS</span>
+    <span>تفاصيل الوحدة المؤجرة</span>
+</div>
+<table class="data-table">
+    <tbody>
+        <tr>
+            <td class="label-en" style="width: 15%;">UNIT USAGE</td>
+            <td class="data-value" style="width: 18.33%;" contenteditable="true">{unit_usage}</td>
+            <td class="label-ar" style="width: 15%;">استخدام الوحدة</td>
+            <td class="label-en" style="width: 15%;">UNIT No.</td>
+            <td class="data-value" style="width: 18.33%;" contenteditable="true">{unit_no}</td>
+            <td class="label-ar" style="width: 15%;">رقم الوحدة</td>
+        </tr>
+        <tr>
+            <td class="label-en">PROPERTY No.</td>
+            <td class="data-value" contenteditable="true">{property_no}</td>
+            <td class="label-ar">رقم العقار</td>
+            <td class="label-en">LOCATION</td>
+            <td class="data-value" contenteditable="true">{location}</td>
+            <td class="label-ar">المنطقة</td>
+        </tr>
+        <tr>
+            <td class="label-en">BLOCK No.</td>
+            <td class="data-value" contenteditable="true">{block_no}</td>
+            <td class="label-ar">المربع</td>
+            <td class="label-en">PLOT No.</td>
+            <td class="data-value" contenteditable="true">{plot_no}</td>
+            <td class="label-ar">رقم القطعة</td>
+        </tr>
+        <tr>
+            <td class="label-en">UNIT TYPE</td>
+            <td class="data-value" contenteditable="true">{unit_type}</td>
+            <td class="label-ar">نوع الوحدة</td>
+            <td class="label-en">MAKANI No.</td>
+            <td class="data-value" contenteditable="true">{makani_no}</td>
+            <td class="label-ar">رقم مكاني</td>
+        </tr>
+        <tr>
+            <td class="label-en">ETIHAD WE No.</td>
+            <td class="data-value" contenteditable="true">{etihad_we_no}</td>
+            <td class="label-ar">رقم الكهرباء</td>
+            <td colspan="3"></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="section-header">
+    <span>CONTRACT DETAILS</span>
+    <span>تفاصيل العقد</span>
+</div>
+<table class="data-table">
+     <tbody>
+        <tr>
+            <td class="label-en" style="width: 15%;">CONTRACT NO</td>
+            <td class="data-value" colspan="2" contenteditable="true">{contract_no}</td>
+            <td class="label-ar" style="width: 15%;">رقم العقد</td>
+        </tr>
+         <tr>
+            <td class="label-en">CONTRACT AMOUNT (AED)</td>
+            <td class="data-value" colspan="2" contenteditable="true">{contract_amount}</td>
+            <td class="label-ar">قيمة العقد</td>
+        </tr>
+         <tr>
+            <td class="label-en">CONTRACT PERIOD</td>
+            <td class="data-value" colspan="2" contenteditable="true">{contract_period}</td>
+            <td class="label-ar">مدة العقد</td>
+        </tr>
+        <tr>
+            <td class="label-en">START DATE</td>
+            <td class="data-value" contenteditable="true">{start_date}</td>
+            <td class="label-ar">تاريخ البدء</td>
+            <td rowspan="2" class="label-ar" style="vertical-align: top; text-align: right;">الدفع و أي شروط</td>
+        </tr>
+        <tr>
+            <td class="label-en">END DATE</td>
+            <td class="data-value" contenteditable="true">{end_date}</td>
+            <td class="label-ar">تاريخ الانتهاء</td>
+        </tr>
+        <tr>
+            <td class="label-en">PAYMENT & OTHER TERMS</td>
+            <td colspan="3" contenteditable="true" style="height: 60px;">{payment_terms}</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="contract-footer text-center">
+     <p class="mb-3" style="color: #6b2b2b; font-weight: bold;">هذا العقد معتمد رقمياً ومسجل رسمياً</p>
+     <p class="mb-4" style="font-family: 'Roboto', sans-serif; direction: ltr;">This is a digitally certified tenancy contract</p>
+</div>'''
+
+    def build_contract_page_two_html(self):
+        """Load default standard legal terms for page two of contract"""
+        try:
+            with open('templates/contract_page_two_content.html', 'r', encoding='utf-8') as f:
+                return f.read()
+        except:
+            return '<p>شروط وأحكام العقد القياسية المعتمدة</p>'
+    
     def convert_12_to_24_hour(self, hour_12, period):
         """Convert 12-hour format to 24-hour format"""
         if period == "صباحاً":
@@ -2694,7 +2978,13 @@ class AdminApp:
                 search = request.args.get('search', '').strip()
                 filter_type = request.args.get('filter_type', '').strip()
                 
-                query = 'SELECT id, tenant_name, tenant_phone, start_date, end_date, created_at, contract_type, id_image, contract_image FROM tenants'
+                query = '''
+                    SELECT id, tenant_name, tenant_phone, start_date, end_date, created_at, 
+                           contract_type, id_image, contract_image, page_one_content, 
+                           payment_count, check_images, commercial_license_number, notes,
+                           commercial_license_image, has_commitment, maintenance_responsibility
+                    FROM tenants
+                '''
                 params = []
                 
                 if search:
@@ -2708,42 +2998,104 @@ class AdminApp:
                 
                 tenants_data = []
                 for r in rows:
+                    page_one = r[9] if len(r) > 9 else ''
+                    parsed = self.parse_contract_page_one(page_one)
+                    
+                    check_images_str = r[11] if len(r) > 11 and r[11] else ''
+                    check_list = [c.strip() for c in check_images_str.split(',') if c.strip()]
+                    
+                    effective_start = r[3] or parsed.get('start_date') or ''
+                    effective_end = r[4] or parsed.get('end_date') or ''
+                    effective_phone = r[2] or parsed.get('tenant_phone') or ''
+                    effective_amount = parsed.get('contract_amount') or ''
+                    
                     tenants_data.append({
                         'id': r[0],
+                        'name': r[1],
                         'tenant_name': r[1],
-                        'tenant_phone': r[2],
-                        'start_date': r[3],
-                        'end_date': r[4],
+                        'phone': effective_phone,
+                        'tenant_phone': effective_phone,
+                        'start_date': effective_start,
+                        'end_date': effective_end,
                         'created_at': r[5],
-                        'contract_type': r[6] if len(r) > 6 else 'عقد إيجار',
+                        'contract_type': r[6] if len(r) > 6 and r[6] else 'عقد إيجار',
                         'id_image': r[7] if len(r) > 7 else None,
                         'contract_image': r[8] if len(r) > 8 else None,
-                        'whatsapp_url': self.format_whatsapp_url(r[2])
+                        'has_id_image': bool(r[7] if len(r) > 7 else None),
+                        'has_contract_image': bool(r[8] if len(r) > 8 else None),
+                        'has_license_image': bool(r[14] if len(r) > 14 else None),
+                        'payment_count': r[10] if len(r) > 10 else None,
+                        'check_images': check_images_str,
+                        'check_images_list': check_list,
+                        'check_count': len(check_list),
+                        'commercial_license_number': r[12] if len(r) > 12 else None,
+                        'commercial_license_image': r[14] if len(r) > 14 else None,
+                        'has_commitment': r[15] if len(r) > 15 else None,
+                        'maintenance_responsibility': r[16] if len(r) > 16 else None,
+                        'notes': r[13] if len(r) > 13 else '',
+                        # Structured parsed fields
+                        'unit_number': parsed.get('unit_no') or '',
+                        'property_number': parsed.get('property_no') or '',
+                        'location': parsed.get('location') or '',
+                        'unit_type': parsed.get('unit_type') or '',
+                        'unit_usage': parsed.get('unit_usage') or '',
+                        'rent_amount': effective_amount,
+                        'contract_amount': effective_amount,
+                        'contract_number': parsed.get('contract_no') or '',
+                        'contract_period': parsed.get('contract_period') or '',
+                        'payment_terms': parsed.get('payment_terms') or '',
+                        'lessor_name': parsed.get('lessor_name') or '',
+                        'lessor_phone': parsed.get('lessor_phone') or '',
+                        'lessor_id': parsed.get('lessor_id') or '',
+                        'tenant_id_number': parsed.get('tenant_id') or '',
+                        'block_number': parsed.get('block_no') or '',
+                        'plot_number': parsed.get('plot_no') or '',
+                        'makani_number': parsed.get('makani_no') or '',
+                        'etihad_we_number': parsed.get('etihad_we_no') or '',
+                        'whatsapp_url': self.format_whatsapp_url(effective_phone)
                     })
                 return jsonify({'success': True, 'count': len(tenants_data), 'tenants': tenants_data})
                 
             elif request.method == 'POST':
                 data = request.get_json(silent=True) or request.form
-                name = data.get('tenant_name', '').strip()
-                phone = data.get('tenant_phone', '').strip()
+                name = data.get('tenant_name', '').strip() or data.get('name', '').strip()
+                phone = data.get('tenant_phone', '').strip() or data.get('phone', '').strip()
                 start_date = data.get('start_date', '').strip()
                 end_date = data.get('end_date', '').strip()
                 contract_type = data.get('contract_type', 'سكني')
+                payment_count = data.get('payment_count')
+                commercial_license_number = data.get('commercial_license_number', '').strip()
+                has_commitment = data.get('has_commitment', '')
+                maintenance_responsibility = data.get('maintenance_responsibility', '')
                 notes = data.get('notes', '')
                 
                 if not name:
                     conn.close()
                     return jsonify({'success': False, 'message': 'اسم المستأجر مطلوب'}), 400
                 
+                # Build complete contract page 1 & 2 HTML
+                page_one_content = self.build_contract_page_one_html(data)
+                page_two_content = self.build_contract_page_two_html()
+                
                 cursor.execute('''
-                    INSERT INTO tenants (tenant_name, tenant_phone, start_date, end_date, contract_type, notes, page_one_content, page_two_content)
-                    VALUES (?, ?, ?, ?, ?, ?, '', '')
-                ''', (name, phone, start_date, end_date, contract_type, notes))
+                    INSERT INTO tenants (
+                        tenant_name, tenant_phone, start_date, end_date, 
+                        contract_type, payment_count, commercial_license_number, 
+                        has_commitment, maintenance_responsibility, notes, 
+                        page_one_content, page_two_content
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    name, phone, start_date, end_date, 
+                    contract_type, payment_count, commercial_license_number, 
+                    has_commitment, maintenance_responsibility, notes, 
+                    page_one_content, page_two_content
+                ))
                 conn.commit()
                 new_id = cursor.lastrowid
                 conn.close()
                 
-                return jsonify({'success': True, 'message': 'تم إضافة المستأجر بنجاح', 'tenant_id': new_id}), 201
+                return jsonify({'success': True, 'message': 'تم إضافة المستأجر وحفظ بيانات العقد بنجاح', 'tenant_id': new_id}), 201
 
         @self.app.route('/api/v1/tenants/<int:tenant_id>', methods=['GET', 'PUT', 'DELETE'])
         def api_v1_tenant_detail(tenant_id):
@@ -2757,53 +3109,140 @@ class AdminApp:
                 if not t:
                     return jsonify({'success': False, 'message': 'المستأجر غير موجود'}), 404
                 
+                page_one = t[2] if len(t) > 2 and t[2] else ''
+                page_two = t[3] if len(t) > 3 and t[3] else ''
+                parsed = self.parse_contract_page_one(page_one)
+                
+                check_images_str = t[13] if len(t) > 13 and t[13] else ''
+                check_list = [c.strip() for c in check_images_str.split(',') if c.strip()]
+                
+                effective_start = t[7] or parsed.get('start_date') or ''
+                effective_end = t[8] or parsed.get('end_date') or ''
+                effective_phone = t[6] or parsed.get('tenant_phone') or ''
+                effective_amount = parsed.get('contract_amount') or ''
+                
                 return jsonify({
                     'success': True,
                     'tenant': {
                         'id': t[0],
                         'name': t[1],
-                        'phone': t[6] if len(t) > 6 else None,
-                        'start_date': t[7] if len(t) > 7 else None,
-                        'end_date': t[8] if len(t) > 8 else None,
-                        'id_image': t[9] if len(t) > 9 else None,
-                        'contract_image': t[10] if len(t) > 10 else None,
-                        'contract_type': t[11] if len(t) > 11 else None,
-                        'payment_count': t[12] if len(t) > 12 else None,
-                        'check_images': t[13] if len(t) > 13 else None,
-                        'has_commitment': t[14] if len(t) > 14 else None,
-                        'maintenance_responsibility': t[15] if len(t) > 15 else None,
-                        'notes': t[16] if len(t) > 16 else None,
-                        'commercial_license_number': t[17] if len(t) > 17 else None,
-                        'commercial_license_image': t[18] if len(t) > 18 else None,
+                        'tenant_name': t[1],
+                        'page_one_content': page_one,
+                        'page_two_content': page_two,
                         'created_at': t[4] if len(t) > 4 else None,
                         'updated_at': t[5] if len(t) > 5 else None,
-                        'whatsapp_url': self.format_whatsapp_url(t[6] if len(t) > 6 else '')
+                        'phone': effective_phone,
+                        'tenant_phone': effective_phone,
+                        'start_date': effective_start,
+                        'end_date': effective_end,
+                        'id_image': t[9] if len(t) > 9 else None,
+                        'contract_image': t[10] if len(t) > 10 else None,
+                        'contract_type': t[11] if len(t) > 11 and t[11] else 'عقد إيجار',
+                        'payment_count': t[12] if len(t) > 12 else None,
+                        'check_images': check_images_str,
+                        'check_images_list': check_list,
+                        'check_count': len(check_list),
+                        'has_commitment': t[14] if len(t) > 14 else None,
+                        'maintenance_responsibility': t[15] if len(t) > 15 else None,
+                        'notes': t[16] if len(t) > 16 else '',
+                        'commercial_license_number': t[17] if len(t) > 17 else None,
+                        'commercial_license_image': t[18] if len(t) > 18 else None,
+                        'whatsapp_url': self.format_whatsapp_url(effective_phone),
+                        # Structured parsed contract fields
+                        'lessor_name': parsed.get('lessor_name') or '',
+                        'lessor_phone': parsed.get('lessor_phone') or '',
+                        'lessor_id': parsed.get('lessor_id') or '',
+                        'tenant_id_number': parsed.get('tenant_id') or '',
+                        'unit_usage': parsed.get('unit_usage') or '',
+                        'unit_number': parsed.get('unit_no') or '',
+                        'property_number': parsed.get('property_no') or '',
+                        'location': parsed.get('location') or '',
+                        'block_number': parsed.get('block_no') or '',
+                        'plot_number': parsed.get('plot_no') or '',
+                        'unit_type': parsed.get('unit_type') or '',
+                        'makani_number': parsed.get('makani_no') or '',
+                        'etihad_we_number': parsed.get('etihad_we_no') or '',
+                        'contract_number': parsed.get('contract_no') or '',
+                        'rent_amount': effective_amount,
+                        'contract_amount': effective_amount,
+                        'contract_period': parsed.get('contract_period') or '',
+                        'payment_terms': parsed.get('payment_terms') or '',
+                        'parsed_contract': parsed
                     }
                 })
                 
             elif request.method == 'PUT':
                 data = request.get_json(silent=True) or request.form
-                name = data.get('tenant_name')
-                phone = data.get('tenant_phone')
-                start_date = data.get('start_date')
-                end_date = data.get('end_date')
-                contract_type = data.get('contract_type')
-                notes = data.get('notes')
+                
+                cursor.execute('SELECT * FROM tenants WHERE id = ?', (tenant_id,))
+                current = cursor.fetchone()
+                if not current:
+                    conn.close()
+                    return jsonify({'success': False, 'message': 'المستأجر غير موجود'}), 404
+                
+                existing_page_one = current[2] if len(current) > 2 and current[2] else ''
+                parsed_existing = self.parse_contract_page_one(existing_page_one)
+                
+                merged = {
+                    'lessor_name': data.get('lessor_name') or parsed_existing.get('lessor_name'),
+                    'lessor_phone': data.get('lessor_phone') or parsed_existing.get('lessor_phone'),
+                    'lessor_id': data.get('lessor_id') or parsed_existing.get('lessor_id'),
+                    'tenant_name': data.get('tenant_name') or data.get('name') or current[1],
+                    'tenant_phone': data.get('tenant_phone') or data.get('phone') or current[6],
+                    'tenant_id_number': data.get('tenant_id_number') or data.get('tenant_id') or parsed_existing.get('tenant_id'),
+                    'unit_usage': data.get('unit_usage') or parsed_existing.get('unit_usage'),
+                    'unit_number': data.get('unit_number') or data.get('unit_no') or parsed_existing.get('unit_no'),
+                    'property_number': data.get('property_number') or data.get('property_no') or parsed_existing.get('property_no'),
+                    'location': data.get('location') or parsed_existing.get('location'),
+                    'block_number': data.get('block_number') or data.get('block_no') or parsed_existing.get('block_no'),
+                    'plot_number': data.get('plot_number') or data.get('plot_no') or parsed_existing.get('plot_no'),
+                    'unit_type': data.get('unit_type') or parsed_existing.get('unit_type'),
+                    'makani_number': data.get('makani_number') or data.get('makani_no') or parsed_existing.get('makani_no'),
+                    'etihad_we_number': data.get('etihad_we_number') or data.get('etihad_we_no') or parsed_existing.get('etihad_we_no'),
+                    'contract_number': data.get('contract_number') or data.get('contract_no') or parsed_existing.get('contract_no'),
+                    'contract_amount': data.get('rent_amount') or data.get('contract_amount') or parsed_existing.get('contract_amount'),
+                    'contract_period': data.get('contract_period') or parsed_existing.get('contract_period'),
+                    'start_date': data.get('start_date') or current[7] or parsed_existing.get('start_date'),
+                    'end_date': data.get('end_date') or current[8] or parsed_existing.get('end_date'),
+                    'payment_terms': data.get('payment_terms') or parsed_existing.get('payment_terms'),
+                }
+                
+                new_page_one = self.build_contract_page_one_html(merged)
+                
+                name = merged['tenant_name']
+                phone = merged['tenant_phone']
+                start_date = merged['start_date']
+                end_date = merged['end_date']
+                contract_type = data.get('contract_type') or current[11]
+                payment_count = data.get('payment_count') or current[12]
+                commercial_license_number = data.get('commercial_license_number') if 'commercial_license_number' in data else current[17]
+                has_commitment = data.get('has_commitment') if 'has_commitment' in data else current[14]
+                maintenance_responsibility = data.get('maintenance_responsibility') if 'maintenance_responsibility' in data else current[15]
+                notes = data.get('notes') if 'notes' in data else current[16]
                 
                 cursor.execute('''
                     UPDATE tenants 
-                    SET tenant_name = COALESCE(?, tenant_name),
-                        tenant_phone = COALESCE(?, tenant_phone),
-                        start_date = COALESCE(?, start_date),
-                        end_date = COALESCE(?, end_date),
-                        contract_type = COALESCE(?, contract_type),
-                        notes = COALESCE(?, notes),
+                    SET tenant_name = ?,
+                        tenant_phone = ?,
+                        start_date = ?,
+                        end_date = ?,
+                        contract_type = ?,
+                        payment_count = ?,
+                        commercial_license_number = ?,
+                        has_commitment = ?,
+                        maintenance_responsibility = ?,
+                        notes = ?,
+                        page_one_content = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
-                ''', (name, phone, start_date, end_date, contract_type, notes, tenant_id))
+                ''', (
+                    name, phone, start_date, end_date, contract_type, 
+                    payment_count, commercial_license_number, has_commitment, 
+                    maintenance_responsibility, notes, new_page_one, tenant_id
+                ))
                 conn.commit()
                 conn.close()
-                return jsonify({'success': True, 'message': 'تم تحديث بيانات المستأجر بنجاح'})
+                return jsonify({'success': True, 'message': 'تم تحديث بيانات المستأجر والعقد بنجاح'})
                 
             elif request.method == 'DELETE':
                 cursor.execute('DELETE FROM tenants WHERE id = ?', (tenant_id,))
@@ -2968,13 +3407,18 @@ class AdminApp:
 
         @self.app.route('/api/v1/notifications/logs', methods=['GET'])
         def api_v1_notifications_logs():
-            """سجل الإشعارات المرسلة مع الترقيم والبحث"""
+            """سجل الإشعارات المرسلة مع الترقيم والبحث وحالة منضبطة"""
             conn = sqlite3.connect('database.db')
             cursor = conn.cursor()
             limit = int(request.args.get('limit', 20))
             offset = int(request.args.get('offset', 0))
 
-            cursor.execute('SELECT id, tenant_name, notification_type, status, sent_at, phone_number, message_content FROM notifications_log ORDER BY id DESC LIMIT ? OFFSET ?', (limit, offset))
+            cursor.execute('''
+                SELECT id, tenant_name, notification_type, status, sent_at, message_content, phone_number, error_details
+                FROM notifications_log 
+                ORDER BY id DESC 
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
             rows = cursor.fetchall()
             cursor.execute('SELECT COUNT(*) FROM notifications_log')
             total = cursor.fetchone()[0]
@@ -2982,14 +3426,32 @@ class AdminApp:
 
             logs = []
             for r in rows:
+                raw_status = (r[3] or '').strip()
+                is_success = 'نجح' in raw_status or raw_status.lower() in ['success', 'delivered', 'sent']
+                clean_status = 'نجح' if is_success else 'فشل'
+                
+                # Extract details if failure had extra description
+                status_details = raw_status if raw_status not in ['نجح', 'فشل'] else (r[7] or '')
+                
+                tenant_name = r[1] or 'مستأجر'
+                notif_type = r[2] or 'تنبيه عقد'
+                
+                # Friendly fallback if message_content was null in logs
+                msg = r[5]
+                if not msg or not msg.strip():
+                    msg = f"رسالة {notif_type} مسجلة في سجل النظام للمستأجر {tenant_name}"
+
                 logs.append({
                     'id': r[0],
-                    'tenant_name': r[1],
-                    'notification_type': r[2],
-                    'status': r[3],
-                    'sent_at': r[4],
-                    'phone_number': r[5],
-                    'message_content': r[6]
+                    'tenant_name': tenant_name,
+                    'notification_type': notif_type,
+                    'status': clean_status,
+                    'raw_status': raw_status,
+                    'status_details': status_details,
+                    'sent_at': r[4] or '',
+                    'message_content': msg,
+                    'phone_number': r[6] or '',
+                    'error_details': r[7] or ''
                 })
 
             return jsonify({'success': True, 'total': total, 'logs': logs})

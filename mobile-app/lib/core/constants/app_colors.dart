@@ -39,6 +39,7 @@ class AppColors {
   static const Color dangerSurface = Color(0xFFFEE2E2);
   static const Color info = Color(0xFF06B6D4);
   static const Color infoSurface = Color(0xFFCFFAFE);
+  static const Color whatsApp = Color(0xFF25D366);
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
