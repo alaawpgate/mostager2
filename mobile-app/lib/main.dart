@@ -4,6 +4,8 @@ import 'core/constants/app_colors.dart';
 import 'core/services/api_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/theme/app_theme.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +76,28 @@ class _SplashScreenState extends State<SplashScreen> {
         _statusMessage = res.message ?? 'تعذر الوصول إلى الخادم';
       }
     });
+
+    // Auto navigate after short delay if online
+    if (res.success) {
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (!mounted) return;
+        _navigateToNextScreen();
+      });
+    }
+  }
+
+  void _navigateToNextScreen() {
+    if (StorageService.hasToken()) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
   }
 
   void _showServerSettingsDialog() {
@@ -246,21 +270,35 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Retry Button if offline
-                if (!_isChecking && !_serverOnline)
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white30),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                // Manual Continue to Login button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: const Text('إعادة محاولة الاتصال'),
-                      onPressed: _checkServerConnection,
+                    ),
+                    onPressed: _navigateToNextScreen,
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'المتابعة إلى تسجيل الدخول',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_back_rounded, size: 18, color: Colors.white),
+                      ],
                     ),
                   ),
+                ),
 
                 const SizedBox(height: 24),
                 const Text(
