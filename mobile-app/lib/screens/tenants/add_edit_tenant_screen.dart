@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../core/constants/api_endpoints.dart';
 import '../../core/constants/app_colors.dart';
@@ -55,6 +57,12 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
   late TextEditingController _commitmentController;
   late TextEditingController _licenseNumberController;
   late TextEditingController _notesController;
+
+  // 5. File Attachments (ID, Contract, License, Cheques)
+  File? _idImageFile;
+  File? _contractImageFile;
+  File? _licenseImageFile;
+  final List<File> _checkImageFiles = [];
 
   bool _isSaving = false;
 
@@ -229,6 +237,38 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
     }
   }
 
+  Future<File?> _pickImage(BuildContext context) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+              title: const Text('اختيار من المعرض'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+              title: const Text('التقاط بالكاميرا'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return null;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 85);
+    if (picked != null) {
+      return File(picked.path);
+    }
+    return null;
+  }
+
   Future<void> _saveTenant() async {
     if (!_formKey.currentState!.validate()) {
       _tabController.animateTo(0);
@@ -243,7 +283,7 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
 
     setState(() => _isSaving = true);
 
-    final payload = {
+    final fields = <String, String>{
       // 1. Parties
       'lessor_name': _lessorNameController.text.trim(),
       'lessor_phone': _lessorPhoneController.text.trim(),
@@ -268,12 +308,12 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
       'contract_type': _contractType,
       'rent_amount': _rentAmountController.text.trim(),
       'contract_period': _contractPeriodController.text.trim(),
-      'payment_count': int.tryParse(_paymentCountController.text.trim()) ?? 1,
+      'payment_count': _paymentCountController.text.trim(),
       'payment_terms': _paymentTermsController.text.trim(),
       'start_date': _startDate != null ? DateFormat('dd/MM/yyyy').format(_startDate!) : '',
       'end_date': _endDate != null ? DateFormat('dd/MM/yyyy').format(_endDate!) : '',
 
-      // 4. Terms & Notes
+      // 4. Terms & Notes (تفاصيل العقد الإضافية)
       'maintenance_responsibility': _maintenanceController.text.trim(),
       'has_commitment': _commitmentController.text.trim(),
       'commercial_license_number': _licenseNumberController.text.trim(),
@@ -281,16 +321,32 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
     };
 
     final ApiResponse<dynamic> res;
-    if (widget.isEditing) {
-      res = await ApiService.put(
-        ApiEndpoints.tenantDetail(widget.tenant!.id),
-        body: payload,
+    final endpoint = widget.isEditing
+        ? ApiEndpoints.tenantDetail(widget.tenant!.id)
+        : ApiEndpoints.tenants;
+    final method = widget.isEditing ? 'PUT' : 'POST';
+
+    final hasFiles = _idImageFile != null ||
+        _contractImageFile != null ||
+        _licenseImageFile != null ||
+        _checkImageFiles.isNotEmpty;
+
+    if (hasFiles) {
+      res = await ApiService.submitTenantMultipart(
+        endpoint: endpoint,
+        method: method,
+        fields: fields,
+        idImage: _idImageFile,
+        contractImage: _contractImageFile,
+        licenseImage: _licenseImageFile,
+        checkImages: _checkImageFiles.isNotEmpty ? _checkImageFiles : null,
       );
     } else {
-      res = await ApiService.post(
-        ApiEndpoints.tenants,
-        body: payload,
-      );
+      if (widget.isEditing) {
+        res = await ApiService.put(endpoint, body: fields);
+      } else {
+        res = await ApiService.post(endpoint, body: fields);
+      }
     }
 
     if (!mounted) return;
@@ -358,7 +414,7 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
                 Tab(icon: Icon(Icons.people_alt_rounded, size: 18), text: 'أطراف العقد'),
                 Tab(icon: Icon(Icons.apartment_rounded, size: 18), text: 'الوحدة والعقار'),
                 Tab(icon: Icon(Icons.receipt_long_rounded, size: 18), text: 'العقد والمالية'),
-                Tab(icon: Icon(Icons.gavel_rounded, size: 18), text: 'الشروط والملاحظات'),
+                Tab(icon: Icon(Icons.post_add_rounded, size: 18), text: 'تفاصيل العقد الإضافية'),
               ],
             ),
           ),
@@ -372,7 +428,7 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
             _buildPartiesTab(),
             _buildUnitTab(),
             _buildContractTab(),
-            _buildTermsTab(),
+            _buildAdditionalDetailsTab(),
           ],
         ),
       ),
@@ -786,57 +842,379 @@ class _AddEditTenantScreenState extends State<AddEditTenantScreen> with SingleTi
     );
   }
 
-  // TAB 4: Terms, Legal & Notes
-  Widget _buildTermsTab() {
+  // TAB 4: تفاصيل العقد الإضافية (Exact match for http://127.0.0.1:8080/add-tenant)
+  Widget _buildAdditionalDetailsTab() {
+    final t = widget.tenant;
+    final existingIdUrl = t?.idImage != null ? ApiEndpoints.resolveUploadUrl(t!.idImage, customBaseUrl: ApiService.baseUrl) : null;
+    final existingContractUrl = t?.contractImage != null ? ApiEndpoints.resolveUploadUrl(t!.contractImage, customBaseUrl: ApiService.baseUrl) : null;
+    final existingLicenseUrl = t?.commercialLicenseImage != null ? ApiEndpoints.resolveUploadUrl(t!.commercialLicenseImage, customBaseUrl: ApiService.baseUrl) : null;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildSectionHeader('الشروط والالتزامات القانونية / TERMS', Icons.gavel_rounded, Colors.teal.shade800),
-          const SizedBox(height: 12),
+          _buildSectionHeader('تفاصيل العقد الإضافية', Icons.post_add_rounded, const Color(0xFF6B2B2B)),
+          const SizedBox(height: 14),
 
-          // Commercial License
+          // 1. نوع العقد (جديد / تجديد) & عدد الدفعات / الشيكات
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _contractType,
+                  decoration: const InputDecoration(
+                    labelText: 'نوع العقد',
+                    prefixIcon: Icon(Icons.article_outlined),
+                  ),
+                  items: _contractTypes.map((type) {
+                    return DropdownMenuItem(value: type, child: Text(type));
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _contractType = val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  controller: _paymentCountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'عدد الدفعات / الشيكات',
+                    prefixIcon: Icon(Icons.receipt_rounded),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 2. رقم الرخصة التجارية
           TextFormField(
             controller: _licenseNumberController,
             decoration: const InputDecoration(
-              labelText: 'رقم الرخصة التجارية (للعقود التجارية)',
+              labelText: 'رقم الرخصة التجارية',
               prefixIcon: Icon(Icons.business_center_outlined),
               hintText: 'مثال: CN-1029384',
             ),
           ),
           const SizedBox(height: 14),
 
-          // Maintenance Responsibility
-          TextFormField(
-            controller: _maintenanceController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'مسؤولية الصيانة والخدمات',
-              prefixIcon: Icon(Icons.build_circle_outlined),
-            ),
+          // 3. صورة الرخصة التجارية
+          _buildImagePickerCard(
+            title: 'صورة الرخصة التجارية',
+            icon: Icons.badge_outlined,
+            localFile: _licenseImageFile,
+            existingRemoteUrl: existingLicenseUrl,
+            onPick: () async {
+              final img = await _pickImage(context);
+              if (img != null) setState(() => _licenseImageFile = img);
+            },
+            onRemove: () {
+              setState(() => _licenseImageFile = null);
+            },
           ),
-          const SizedBox(height: 14),
 
-          // Commitment
+          // 4. صور الشيكات (+ إضافة صورة شيك أخرى)
+          _buildCheckImagesSection(),
+
+          // 5. التعهد
           TextFormField(
             controller: _commitmentController,
-            maxLines: 3,
+            maxLines: 2,
             decoration: const InputDecoration(
-              labelText: 'التعهد والالتزام والشروط الخاصة',
+              labelText: 'التعهد',
               prefixIcon: Icon(Icons.handshake_outlined),
             ),
           ),
           const SizedBox(height: 14),
 
-          // General Notes
+          // 6. الصيانة
+          TextFormField(
+            controller: _maintenanceController,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'الصيانة',
+              prefixIcon: Icon(Icons.build_circle_outlined),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // 7. ملاحظات
           TextFormField(
             controller: _notesController,
             maxLines: 3,
             decoration: const InputDecoration(
-              labelText: 'ملاحظات إضافية للمستأجر',
+              labelText: 'ملاحظات',
               prefixIcon: Icon(Icons.edit_note_rounded),
             ),
+          ),
+          const SizedBox(height: 18),
+
+          // 8. وثائق الهوية والعقد الورقي
+          _buildSectionHeader('المستندات الأساسية (الهوية والعقد)', Icons.folder_shared_outlined, AppColors.primary),
+          const SizedBox(height: 12),
+
+          _buildImagePickerCard(
+            title: 'صورة الهوية',
+            icon: Icons.person_pin_rounded,
+            localFile: _idImageFile,
+            existingRemoteUrl: existingIdUrl,
+            onPick: () async {
+              final img = await _pickImage(context);
+              if (img != null) setState(() => _idImageFile = img);
+            },
+            onRemove: () {
+              setState(() => _idImageFile = null);
+            },
+          ),
+
+          _buildImagePickerCard(
+            title: 'صورة العقد',
+            icon: Icons.description_outlined,
+            localFile: _contractImageFile,
+            existingRemoteUrl: existingContractUrl,
+            onPick: () async {
+              final img = await _pickImage(context);
+              if (img != null) setState(() => _contractImageFile = img);
+            },
+            onRemove: () {
+              setState(() => _contractImageFile = null);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePickerCard({
+    required String title,
+    required IconData icon,
+    File? localFile,
+    String? existingRemoteUrl,
+    required VoidCallback onPick,
+    required VoidCallback onRemove,
+  }) {
+    final hasImage = localFile != null || (existingRemoteUrl != null && existingRemoteUrl.isNotEmpty);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasImage ? AppColors.primary.withValues(alpha: 0.5) : AppColors.border,
+          width: hasImage ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: hasImage ? AppColors.primary : AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                ),
+              ),
+              if (hasImage)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                  label: const Text('حذف', style: TextStyle(fontSize: 12)),
+                  onPressed: onRemove,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (localFile != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                localFile,
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            )
+          else if (existingRemoteUrl != null && existingRemoteUrl.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                existingRemoteUrl,
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  height: 60,
+                  alignment: Alignment.center,
+                  color: AppColors.background,
+                  child: const Text('تعذر تحميل الصورة السابقة', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                ),
+              ),
+            )
+          else
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 42),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                side: BorderSide(color: Colors.grey.shade300, style: BorderStyle.solid),
+              ),
+              icon: const Icon(Icons.add_photo_alternate_outlined, size: 18, color: AppColors.primary),
+              label: Text('اختيار / التقاط $title', style: const TextStyle(fontSize: 12, color: AppColors.primary)),
+              onPressed: onPick,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckImagesSection() {
+    final existingRemoteChecks = widget.tenant?.checkImagesList ?? [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.receipt_long_outlined, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'صور الشيكات',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_checkImageFiles.length + existingRemoteChecks.length} شيك',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Existing remote checks
+          if (existingRemoteChecks.isNotEmpty) ...[
+            const Text(
+              'الشيكات المرفوعة سابقاً:',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: existingRemoteChecks.map((filename) {
+                final url = ApiEndpoints.resolveUploadUrl(filename, customBaseUrl: ApiService.baseUrl);
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    url,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      width: 70,
+                      height: 70,
+                      color: AppColors.background,
+                      child: const Icon(Icons.broken_image, size: 20),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // Locally picked checks
+          if (_checkImageFiles.isNotEmpty) ...[
+            const Text(
+              'الشيكات الجديدة المضافة:',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(_checkImageFiles.length, (idx) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        _checkImageFiles[idx],
+                        width: 75,
+                        height: 75,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top: -6,
+                      left: -6,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _checkImageFiles.removeAt(idx);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: AppColors.danger,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // The exact web button: "إضافة صورة شيك أخرى"
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 42),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+            ),
+            icon: const Icon(Icons.add_photo_alternate_rounded, size: 18),
+            label: const Text('إضافة صورة شيك أخرى', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              final img = await _pickImage(context);
+              if (img != null) {
+                setState(() {
+                  _checkImageFiles.add(img);
+                });
+              }
+            },
           ),
         ],
       ),

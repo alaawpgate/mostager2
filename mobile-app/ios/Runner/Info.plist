@@ -47,6 +47,10 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج تطبيق مستأجر للوصول للصور لرفع وثائق الهوية والعقود والشيكات</string>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج تطبيق مستأجر لاستخدام الكاميرا لتصوير وثائق الهوية والعقود والشيكات</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

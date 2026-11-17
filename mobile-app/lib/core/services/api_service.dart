@@ -109,6 +109,49 @@ class ApiService {
     }
   }
 
+  // Multipart Form Request (with file attachments: ID, Contract, License, Cheques)
+  static Future<ApiResponse<dynamic>> submitTenantMultipart({
+    required String endpoint,
+    required String method,
+    required Map<String, String> fields,
+    File? idImage,
+    File? contractImage,
+    File? licenseImage,
+    List<File>? checkImages,
+    Duration timeout = const Duration(seconds: 45),
+  }) async {
+    try {
+      final uri = Uri.parse('$baseUrl$endpoint');
+      final request = http.MultipartRequest(method, uri);
+      request.headers.addAll(_buildHeaders(isMultipart: true));
+      request.fields.addAll(fields);
+
+      if (idImage != null && await idImage.exists()) {
+        request.files.add(await http.MultipartFile.fromPath('id_image', idImage.path));
+      }
+      if (contractImage != null && await contractImage.exists()) {
+        request.files.add(await http.MultipartFile.fromPath('contract_image', contractImage.path));
+      }
+      if (licenseImage != null && await licenseImage.exists()) {
+        request.files.add(await http.MultipartFile.fromPath('commercial_license_image', licenseImage.path));
+      }
+      if (checkImages != null) {
+        for (int i = 0; i < checkImages.length; i++) {
+          final file = checkImages[i];
+          if (await file.exists()) {
+            request.files.add(await http.MultipartFile.fromPath('check_image_${i + 1}', file.path));
+          }
+        }
+      }
+
+      final streamedResponse = await request.send().timeout(timeout);
+      final response = await http.Response.fromStream(streamedResponse);
+      return _handleResponse(response);
+    } catch (e) {
+      return _handleError(e);
+    }
+  }
+
   static ApiResponse<dynamic> _handleResponse(http.Response response) {
     dynamic decodedData;
     String? message;

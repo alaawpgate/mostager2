@@ -3062,6 +3062,48 @@ class AdminApp:
                     conn.close()
                     return jsonify({'success': False, 'message': 'اسم المستأجر مطلوب'}), 400
                 
+                # Handle file uploads
+                upload_folder = self.app.config.get('UPLOAD_FOLDER', 'static/uploads')
+                os.makedirs(upload_folder, exist_ok=True)
+                id_image = None
+                contract_image = None
+                commercial_license_image = None
+                
+                if 'id_image' in request.files:
+                    f = request.files['id_image']
+                    if f and f.filename != '':
+                        fname = secure_filename(f.filename)
+                        fname = f"id_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                        f.save(os.path.join(upload_folder, fname))
+                        id_image = fname
+                        
+                if 'contract_image' in request.files:
+                    f = request.files['contract_image']
+                    if f and f.filename != '':
+                        fname = secure_filename(f.filename)
+                        fname = f"contract_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                        f.save(os.path.join(upload_folder, fname))
+                        contract_image = fname
+                        
+                if 'commercial_license_image' in request.files:
+                    f = request.files['commercial_license_image']
+                    if f and f.filename != '':
+                        fname = secure_filename(f.filename)
+                        fname = f"license_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                        f.save(os.path.join(upload_folder, fname))
+                        commercial_license_image = fname
+
+                check_images = []
+                for key in request.files:
+                    if key.startswith('check_image'):
+                        f = request.files[key]
+                        if f and f.filename != '':
+                            fname = secure_filename(f.filename)
+                            fname = f"check_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                            f.save(os.path.join(upload_folder, fname))
+                            check_images.append(fname)
+                check_images_str = ','.join(check_images) if check_images else None
+
                 # Build complete contract page 1 & 2 HTML
                 page_one_content = self.build_contract_page_one_html(data)
                 page_two_content = self.build_contract_page_two_html()
@@ -3071,14 +3113,16 @@ class AdminApp:
                         tenant_name, tenant_phone, start_date, end_date, 
                         contract_type, payment_count, commercial_license_number, 
                         has_commitment, maintenance_responsibility, notes, 
-                        page_one_content, page_two_content
+                        page_one_content, page_two_content,
+                        id_image, contract_image, commercial_license_image, check_images
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     name, phone, start_date, end_date, 
                     contract_type, payment_count, commercial_license_number, 
                     has_commitment, maintenance_responsibility, notes, 
-                    page_one_content, page_two_content
+                    page_one_content, page_two_content,
+                    id_image, contract_image, commercial_license_image, check_images_str
                 ))
                 conn.commit()
                 new_id = cursor.lastrowid
@@ -3209,6 +3253,51 @@ class AdminApp:
                 maintenance_responsibility = data.get('maintenance_responsibility') if 'maintenance_responsibility' in data else current[15]
                 notes = data.get('notes') if 'notes' in data else current[16]
                 
+                upload_folder = self.app.config.get('UPLOAD_FOLDER', 'static/uploads')
+                os.makedirs(upload_folder, exist_ok=True)
+                id_image = current[7]
+                contract_image = current[8]
+                commercial_license_image = current[18] if len(current) > 18 else None
+                check_images_str = current[13]
+                
+                if 'id_image' in request.files:
+                    f = request.files['id_image']
+                    if f and f.filename != '':
+                        fname = secure_filename(f.filename)
+                        fname = f"id_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                        f.save(os.path.join(upload_folder, fname))
+                        id_image = fname
+                        
+                if 'contract_image' in request.files:
+                    f = request.files['contract_image']
+                    if f and f.filename != '':
+                        fname = secure_filename(f.filename)
+                        fname = f"contract_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                        f.save(os.path.join(upload_folder, fname))
+                        contract_image = fname
+                        
+                if 'commercial_license_image' in request.files:
+                    f = request.files['commercial_license_image']
+                    if f and f.filename != '':
+                        fname = secure_filename(f.filename)
+                        fname = f"license_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                        f.save(os.path.join(upload_folder, fname))
+                        commercial_license_image = fname
+
+                new_checks = []
+                for key in request.files:
+                    if key.startswith('check_image'):
+                        f = request.files[key]
+                        if f and f.filename != '':
+                            fname = secure_filename(f.filename)
+                            fname = f"check_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{fname}"
+                            f.save(os.path.join(upload_folder, fname))
+                            new_checks.append(fname)
+                if new_checks:
+                    existing = [c.strip() for c in (check_images_str or '').split(',') if c.strip()]
+                    existing.extend(new_checks)
+                    check_images_str = ','.join(existing)
+
                 cursor.execute('''
                     UPDATE tenants 
                     SET tenant_name = ?,
@@ -3222,12 +3311,18 @@ class AdminApp:
                         maintenance_responsibility = ?,
                         notes = ?,
                         page_one_content = ?,
+                        id_image = ?,
+                        contract_image = ?,
+                        commercial_license_image = ?,
+                        check_images = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                 ''', (
                     name, phone, start_date, end_date, contract_type, 
                     payment_count, commercial_license_number, has_commitment, 
-                    maintenance_responsibility, notes, new_page_one, tenant_id
+                    maintenance_responsibility, notes, new_page_one, 
+                    id_image, contract_image, commercial_license_image, check_images_str,
+                    tenant_id
                 ))
                 conn.commit()
                 conn.close()
