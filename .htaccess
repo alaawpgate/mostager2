@@ -1,0 +1,24 @@
+# Disable directory indexing
+Options -Indexes
+
+# Protect sensitive database, environment, and code files from direct download
+<FilesMatch "\.(db|sqlite|sqlite3|py|pyc|log|env|git|sh|md|bat)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Explicitly protect database.db
+<Files "database.db">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
