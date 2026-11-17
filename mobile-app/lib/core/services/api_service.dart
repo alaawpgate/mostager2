@@ -189,6 +189,8 @@ class ApiService {
       msg = 'تعذر الاتصال بالخادم. يرجى التأكد من تشغيل النظام أو اتصال الشبكة.';
     } else if (error is TimeoutException) {
       msg = 'استغرقت الاستجابة وقتاً أطول من المتوقع، حاول مجدداً.';
+    } else if (error is HandshakeException) {
+      msg = 'خطأ في التحقق من شهادة أمان السيرفر (SSL). يرجى التأكد من ضبط توقيت الهاتف.';
     } else {
       msg = error.toString();
     }
