@@ -1,27 +1,26 @@
 import sys
 import os
+import traceback
 
 # Add application directory to path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-# Set up virtual environment site-packages if present
-venv_dir = os.path.join(current_dir, 'venv')
-if os.path.exists(venv_dir):
-    # Search for python3.x site-packages
-    lib_dir = os.path.join(venv_dir, 'lib')
-    if os.path.exists(lib_dir):
-        for entry in os.listdir(lib_dir):
-            sp = os.path.join(lib_dir, entry, 'site-packages')
-            if os.path.exists(sp):
-                sys.path.insert(0, sp)
-                break
+try:
+    from app import AdminApp
+    admin_instance = AdminApp()
+    application = admin_instance.app
+except Exception as e:
+    err_msg = traceback.format_exc()
+    try:
+        with open(os.path.join(current_dir, 'passenger_error.log'), 'w') as f:
+            f.write(err_msg)
+    except Exception:
+        pass
 
-from app import AdminApp
-
-# WSGI application callable required by cPanel / Phusion Passenger / LiteSpeed
-admin_instance = AdminApp()
-application = admin_instance.app
+    def application(environ, start_response):
+        start_response('500 Internal Server Error', [('Content-Type', 'text/plain; charset=utf-8')])
+        return [f"خطأ أثناء تحميل النظام:\n\n{err_msg}".encode('utf-8')]
 
 if __name__ == '__main__':
     application.run()
