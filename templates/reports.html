@@ -204,9 +204,9 @@
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <div class="tenant-avatar" style="width: 34px; height: 34px; font-size: 0.95rem;">
-                                                    {{ tenant[1][:1] }}
+                                                    {{ (tenant[1] or 'م')[:1] }}
                                                 </div>
-                                                <div class="fw-bold text-dark">{{ tenant[1] }}</div>
+                                                <div class="fw-bold text-dark">{{ tenant[1] or 'مستأجر' }}</div>
                                             </div>
                                         </td>
                                         <td>
@@ -342,7 +342,7 @@
                                         </div>
                                         <div class="progress" style="height: 8px; border-radius: 4px; background-color: #f1f5f9;">
                                             <div class="progress-bar bg-teal" role="progressbar" 
-                                                 style="width: {{ (notification[1] / total_notifications * 100)|round|int }}%;">
+                                                 style="width: {{ ((notification[1] / total_notifications * 100)|round|int) if total_notifications > 0 else 0 }}%;">
                                             </div>
                                         </div>
                                     </div>

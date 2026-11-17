@@ -1996,15 +1996,30 @@ class AdminApp:
             recent_notifications = cursor.fetchall()
             
             # معالجة الفلاتر
-            filter_type = request.args.get('filter_type', '')
-            days_filter = int(request.args.get('days_filter', 30))
+            filter_type = request.args.get('filter_type', '').strip()
+            raw_days = request.args.get('days_filter', '30')
+            try:
+                days_filter = int(raw_days) if raw_days and str(raw_days).strip() else 30
+            except (ValueError, TypeError):
+                days_filter = 30
+            
+            if days_filter <= 0:
+                days_filter = 30
+                
             filtered_tenants = []
             
-            print(f"Filter type: {filter_type}, Days filter: {days_filter}")  # Debug
+            def _parse_safe_date(d_str):
+                if not d_str or not isinstance(d_str, str):
+                    return None
+                d_str = d_str.strip()
+                for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%Y/%m/%d'):
+                    try:
+                        return datetime.strptime(d_str, fmt)
+                    except (ValueError, TypeError):
+                        pass
+                return None
             
             if filter_type:
-                print(f"Processing filter: {filter_type}")  # Debug
-                
                 if filter_type == 'expiring_soon':
                     # العقود قاربت على الانتهاء
                     cursor.execute('''
@@ -2013,30 +2028,17 @@ class AdminApp:
                         WHERE end_date IS NOT NULL AND end_date != ""
                     ''')
                     all_tenants = cursor.fetchall()
-                    print(f"Found {len(all_tenants)} tenants with end dates")  # Debug
-                    
                     today = datetime.now()
                     
                     for tenant in all_tenants:
                         try:
-                            end_date_str = tenant[4]
-                            print(f"Processing tenant {tenant[1]} with end date: {end_date_str}")  # Debug
-                            
-                            try:
-                                end_date = datetime.strptime(end_date_str, '%d/%m/%Y')
-                            except:
-                                try:
-                                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-                                except:
-                                    continue
-                            
+                            end_date = _parse_safe_date(tenant[4])
+                            if not end_date:
+                                continue
                             days_diff = (end_date - today).days
-                            
                             if 0 <= days_diff <= days_filter:
                                 filtered_tenants.append(tenant + (days_diff,))
-                                
-                        except Exception as e:
-                            print(f"Error processing tenant {tenant[1]}: {e}")
+                        except Exception:
                             continue
                             
                 elif filter_type == 'expired':
@@ -2051,20 +2053,13 @@ class AdminApp:
                     
                     for tenant in all_tenants:
                         try:
-                            end_date_str = tenant[4]
-                            try:
-                                end_date = datetime.strptime(end_date_str, '%d/%m/%Y')
-                            except:
-                                try:
-                                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-                                except:
-                                    continue
-                            
+                            end_date = _parse_safe_date(tenant[4])
+                            if not end_date:
+                                continue
                             days_diff = (end_date - today).days
-                            
                             if days_diff < 0:
                                 filtered_tenants.append(tenant)
-                        except Exception as e:
+                        except Exception:
                             continue
                             
                 elif filter_type == 'no_phone':
@@ -2081,8 +2076,6 @@ class AdminApp:
                         FROM tenants
                     ''')
                     filtered_tenants = cursor.fetchall()
-                
-                print(f"Final filtered tenants count: {len(filtered_tenants)}")  # Debug
             
             # المستأجرين الذين ينتهي عقدهم قريباً (للإحصائيات)
             today = datetime.now()
@@ -2101,14 +2094,9 @@ class AdminApp:
             
             for tenant in all_tenants:
                 try:
-                    try:
-                        end_date = datetime.strptime(tenant[1], '%d/%m/%Y')
-                    except:
-                        try:
-                            end_date = datetime.strptime(tenant[1], '%Y-%m-%d')
-                        except:
-                            continue
-                    
+                    end_date = _parse_safe_date(tenant[1])
+                    if not end_date:
+                        continue
                     days_diff = (end_date - today).days
                     
                     if days_diff < 0:
@@ -2119,7 +2107,7 @@ class AdminApp:
                         expiring_this_month.append((tenant[0], tenant[1], tenant[2], days_diff))
                     elif days_diff <= 60:
                         expiring_next_month.append((tenant[0], tenant[1], tenant[2], days_diff))
-                except:
+                except Exception:
                     continue
             
             conn.close()
