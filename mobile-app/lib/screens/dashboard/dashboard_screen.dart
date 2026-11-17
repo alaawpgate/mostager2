@@ -451,8 +451,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final fullName = _adminProfile?['full_name'] ?? 'المدير العام';
     final dateStr = DateFormat('EEEE، d MMMM yyyy', 'ar').format(DateTime.now());
     final avatar = _adminProfile?['avatar']?.toString();
-    final hasCustomAvatar = avatar != null && avatar.isNotEmpty && avatar != 'avatar.png' && avatar != 'null';
-    final avatarUrl = hasCustomAvatar ? '${ApiEndpoints.uploadsBase}/$avatar' : null;
+    final resolvedUrl = ApiEndpoints.resolveUploadUrl(avatar, customBaseUrl: ApiService.baseUrl);
+    final avatarUrl = resolvedUrl.isNotEmpty ? resolvedUrl : null;
 
     return Container(
       width: double.infinity,

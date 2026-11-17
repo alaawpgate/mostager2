@@ -258,32 +258,44 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
         ],
         bottom: _tenant != null
             ? PreferredSize(
-                preferredSize: const Size.fromHeight(50),
+                preferredSize: const Size.fromHeight(60),
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      bottom: BorderSide(color: AppColors.border, width: 1),
-                    ),
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAEFF2),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
-                    labelColor: AppColors.primary,
-                    unselectedLabelColor: AppColors.textSecondary,
-                    indicatorColor: AppColors.primary,
-                    indicatorWeight: 3,
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.primary,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: const Color(0xFF334155),
                     labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                     tabs: [
-                      const Tab(icon: Icon(Icons.description_outlined, size: 19), text: 'بيانات وشروط العقد'),
-                      const Tab(icon: Icon(Icons.folder_shared_outlined, size: 19), text: 'المستندات الرسمية'),
+                      const Tab(icon: Icon(Icons.description_outlined, size: 18), text: 'بيانات وشروط العقد'),
+                      const Tab(icon: Icon(Icons.folder_shared_outlined, size: 18), text: 'المستندات الرسمية'),
                       Tab(
-                        icon: const Icon(Icons.receipt_long_outlined, size: 19),
+                        icon: const Icon(Icons.receipt_long_outlined, size: 18),
                         text: 'سجل الشيكات (${_tenant!.checkCount})',
                       ),
-                      const Tab(icon: Icon(Icons.print_outlined, size: 19), text: 'وثيقة العقد (A4)'),
+                      const Tab(icon: Icon(Icons.print_outlined, size: 18), text: 'وثيقة العقد (A4)'),
                     ],
                   ),
                 ),
@@ -771,19 +783,24 @@ class _TenantDetailScreenState extends State<TenantDetailScreen> with SingleTick
             ),
           ),
           Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: AppColors.border, width: 1),
-              ),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAEFF2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
             ),
             child: const TabBar(
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+                color: AppColors.primary,
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: Color(0xFF334155),
               labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               tabs: [
                 Tab(text: 'الصفحة الأولى (بيانات العقد)'),
                 Tab(text: 'الصفحة الثانية (الشروط القانونية)'),

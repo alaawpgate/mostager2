@@ -19,6 +19,18 @@ class ApiEndpoints {
     return '$base/static/uploads';
   }
 
+  static String resolveUploadUrl(String? filename, {String? customBaseUrl}) {
+    if (filename == null || filename.isEmpty || filename == 'null') return '';
+    if (filename.startsWith('http://') || filename.startsWith('https://')) {
+      return filename;
+    }
+    final root = (customBaseUrl ?? defaultBaseUrl).replaceAll('/api/v1', '');
+    if (filename == 'avatar.png') {
+      return '$root/static/avatar.png';
+    }
+    return '$root/static/uploads/$filename';
+  }
+
   // Auth
   static const String login = '/auth/login';
   static const String profile = '/auth/profile';

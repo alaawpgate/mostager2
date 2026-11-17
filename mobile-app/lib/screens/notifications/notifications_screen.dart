@@ -383,17 +383,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     final content = Column(
       children: [
         Container(
-          color: Colors.white,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAEFF2),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+          ),
           child: TabBar(
             controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
-            indicatorWeight: 3,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            indicator: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primary,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.35),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            labelColor: Colors.white,
+            unselectedLabelColor: const Color(0xFF334155),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             tabs: const [
-              Tab(icon: Icon(Icons.history_rounded, size: 20), text: 'سجل التنبيهات'),
-              Tab(icon: Icon(Icons.send_rounded, size: 20), text: 'إرسال رسالة فورية'),
+              Tab(icon: Icon(Icons.history_rounded, size: 19), text: 'سجل التنبيهات'),
+              Tab(icon: Icon(Icons.send_rounded, size: 19), text: 'إرسال رسالة فورية'),
             ],
           ),
         ),

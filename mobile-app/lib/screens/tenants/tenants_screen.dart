@@ -168,6 +168,26 @@ class _TenantsScreenState extends State<TenantsScreen> {
     } catch (_) {}
   }
 
+  void _openContractPrint(TenantModel tenant) async {
+    final base = ApiService.baseUrl.replaceAll('/api/v1', '');
+    final url = Uri.parse('$base/api/v1/tenants/${tenant.id}/contract');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر فتح وثيقة العقد')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ: $e')),
+      );
+    }
+  }
+
   String _formatDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return 'غير محدد';
     try {
@@ -499,11 +519,23 @@ class _TenantsScreenState extends State<TenantsScreen> {
                         if (res == true) {
                           _fetchTenants(search: _searchController.text);
                         }
+                      } else if (val == 'contract') {
+                        _openContractPrint(tenant);
                       } else if (val == 'delete') {
                         _deleteTenant(tenant);
                       }
                     },
                     itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'contract',
+                        child: Row(
+                          children: [
+                            Icon(Icons.print_outlined, size: 18, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Text('تحميل العقد A4 (PDF)'),
+                          ],
+                        ),
+                      ),
                       const PopupMenuItem(
                         value: 'edit',
                         child: Row(
@@ -727,6 +759,18 @@ class _TenantsScreenState extends State<TenantsScreen> {
                           ? () => _makeCall(tenant.phone)
                           : null,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF6B2B2B),
+                      side: const BorderSide(color: Color(0xFF6B2B2B)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    icon: const Icon(Icons.print_outlined, size: 16),
+                    label: const Text('عقد A4', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: () => _openContractPrint(tenant),
                   ),
                   const SizedBox(width: 8),
                   IconButton(

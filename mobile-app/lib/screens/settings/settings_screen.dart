@@ -376,8 +376,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final username = _userProfile?['username'] ?? 'admin';
     final email = _userProfile?['email'] ?? '';
     final avatar = _userProfile?['avatar']?.toString();
-    final hasCustomAvatar = avatar != null && avatar.isNotEmpty && avatar != 'avatar.png' && avatar != 'null';
-    final avatarUrl = hasCustomAvatar ? '${ApiEndpoints.uploadsBase}/$avatar' : null;
+    final resolvedUrl = ApiEndpoints.resolveUploadUrl(avatar, customBaseUrl: ApiService.baseUrl);
+    final avatarUrl = resolvedUrl.isNotEmpty ? resolvedUrl : null;
 
     return Card(
       elevation: 0,
